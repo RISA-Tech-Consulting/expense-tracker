@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Expense, Category } from '../types';
+import './ExpenseForm.css';
 
 interface Props {
   expense?: Expense;
@@ -27,7 +28,7 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
   };
 
   return (
-    <div className="modal d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+    <div className="modal d-block expense-form-overlay">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header border-bottom">

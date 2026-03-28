@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchInsights } from '../api';
 import { InsightsSummary } from '../types';
+import './TaxInsights.css';
 
 export default function TaxInsights() {
   const [insights, setInsights] = useState<InsightsSummary | null>(null);
@@ -37,15 +38,15 @@ export default function TaxInsights() {
       {/* Summary Cards */}
       <div className="row g-3 mb-4 mb-md-5">
         {[
-          { label: 'Total Deductible', value: `$${(insights?.totalDeductible ?? 0).toFixed(2)}`, color: '#10B981', bg: '#F0FDF4' },
-          { label: 'Non-Deductible', value: `$${(insights?.totalNonDeductible ?? 0).toFixed(2)}`, color: '#EF4444', bg: '#FFF1F2' },
-          { label: 'Est. Tax Savings (30%)', value: `$${estimatedSavings.toFixed(2)}`, color: '#8B5CF6', bg: '#F5F3FF' },
+          { label: 'Total Deductible', value: `$${(insights?.totalDeductible ?? 0).toFixed(2)}`, tone: 'deductible' },
+          { label: 'Non-Deductible', value: `$${(insights?.totalNonDeductible ?? 0).toFixed(2)}`, tone: 'non-deductible' },
+          { label: 'Est. Tax Savings (30%)', value: `$${estimatedSavings.toFixed(2)}`, tone: 'savings' },
         ].map(card => (
           <div key={card.label} className="col-12 col-sm-6 col-lg-4">
-            <div className="card border-0 h-100" style={{ background: card.bg }}>
+            <div className={`card border-0 h-100 tax-summary-card tax-summary-card-${card.tone}`}>
               <div className="card-body">
                 <p className="card-text text-muted small mb-2">{card.label}</p>
-                <p className="fw-bold fs-4" style={{ color: card.color }}>
+                <p className={`fw-bold fs-4 tax-summary-value tax-summary-value-${card.tone}`}>
                   {card.value}
                 </p>
               </div>
@@ -65,28 +66,30 @@ export default function TaxInsights() {
               <p className="text-muted small mb-3">
                 {(insights?.deductiblePercentage ?? 0).toFixed(1)}% of expenses are tax deductible
               </p>
-              <div className="progress mb-3" style={{ height: '24px' }}>
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: `${insights?.deductiblePercentage ?? 0}%`,
-                    background: '#10B981',
-                  }}
-                ></div>
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: `${100 - (insights?.deductiblePercentage ?? 0)}%`,
-                    background: '#EF4444',
-                  }}
-                ></div>
+              <div className="tax-deductibility-track mb-3" role="img" aria-label="Deductible vs non-deductible split">
+                <svg className="tax-deductibility-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
+                  <rect
+                    x="0"
+                    y="0"
+                    width={Math.max(0, Math.min(100, insights?.deductiblePercentage ?? 0))}
+                    height="24"
+                    className="tax-deductibility-fill-deductible"
+                  />
+                  <rect
+                    x={Math.max(0, Math.min(100, insights?.deductiblePercentage ?? 0))}
+                    y="0"
+                    width={Math.max(0, Math.min(100, 100 - (insights?.deductiblePercentage ?? 0)))}
+                    height="24"
+                    className="tax-deductibility-fill-non-deductible"
+                  />
+                </svg>
               </div>
               <div className="small">
                 <div className="mb-2">
-                  <span style={{ color: '#10B981' }}>● Deductible: ${(insights?.totalDeductible ?? 0).toFixed(2)}</span>
+                  <span className="tax-legend-deductible">● Deductible: ${(insights?.totalDeductible ?? 0).toFixed(2)}</span>
                 </div>
                 <div>
-                  <span style={{ color: '#EF4444' }}>● Non-deductible: ${(insights?.totalNonDeductible ?? 0).toFixed(2)}</span>
+                  <span className="tax-legend-non-deductible">● Non-deductible: ${(insights?.totalNonDeductible ?? 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -144,14 +147,16 @@ export default function TaxInsights() {
                       </span>
                       <span className="fw-bold">${cat.total.toFixed(2)}</span>
                     </div>
-                    <div className="progress" style={{ height: '8px' }}>
-                      <div
-                        className="progress-bar"
-                        style={{
-                          width: `${(cat.total / maxCat) * 100}%`,
-                          background: cat.taxDeductible ? '#10B981' : '#EF4444',
-                        }}
-                      ></div>
+                    <div className="tax-category-track" role="img" aria-label={`${cat.category} total`}>
+                      <svg className="tax-category-svg" viewBox="0 0 100 8" preserveAspectRatio="none">
+                        <rect
+                          x="0"
+                          y="0"
+                          width={Math.max(0, Math.min(100, (cat.total / maxCat) * 100))}
+                          height="8"
+                          className={cat.taxDeductible ? 'tax-category-fill-deductible' : 'tax-category-fill-non-deductible'}
+                        />
+                      </svg>
                     </div>
                   </div>
                 ))
@@ -169,20 +174,20 @@ export default function TaxInsights() {
               {(insights?.byMonth ?? []).length === 0 ? (
                 <p className="text-muted mb-0">No data yet.</p>
               ) : (
-                <div className="d-flex align-items-end gap-2" style={{ height: '160px' }}>
+                <div className="d-flex align-items-end gap-2 tax-months-chart">
                   {insights?.byMonth.map(m => (
                     <div key={m.month} className="flex-grow-1 d-flex flex-column align-items-center gap-1">
                       <small className="text-muted">${m.total.toFixed(0)}</small>
-                      <div
-                        style={{
-                          width: '100%',
-                          background: '#0d6efd',
-                          borderRadius: '4px 4px 0 0',
-                          height: `${(m.total / maxMonth) * 100}px`,
-                          minHeight: '4px',
-                        }}
-                      ></div>
-                      <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                      <svg className="tax-month-bar" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`${m.month} monthly total`}>
+                        <rect
+                          x="0"
+                          y={100 - Math.max(4, Math.min(100, (m.total / maxMonth) * 100))}
+                          width="100"
+                          height={Math.max(4, Math.min(100, (m.total / maxMonth) * 100))}
+                          className="tax-month-bar-fill"
+                        />
+                      </svg>
+                      <small className="text-muted tax-month-label">
                         {m.month}
                       </small>
                     </div>

@@ -1,0 +1,87 @@
+.tax-summary-card-deductible {
+  background: #f0fdf4;
+}
+
+.tax-summary-card-non-deductible {
+  background: #fff1f2;
+}
+
+.tax-summary-card-savings {
+  background: #f5f3ff;
+}
+
+.tax-summary-value-deductible {
+  color: #10b981;
+}
+
+.tax-summary-value-non-deductible {
+  color: #ef4444;
+}
+
+.tax-summary-value-savings {
+  color: #8b5cf6;
+}
+
+.tax-deductibility-track {
+  height: 24px;
+}
+
+.tax-deductibility-svg {
+  width: 100%;
+  height: 24px;
+  display: block;
+}
+
+.tax-deductibility-fill-deductible {
+  fill: #10b981;
+}
+
+.tax-deductibility-fill-non-deductible {
+  fill: #ef4444;
+}
+
+.tax-legend-deductible {
+  color: #10b981;
+}
+
+.tax-legend-non-deductible {
+  color: #ef4444;
+}
+
+.tax-category-track {
+  height: 8px;
+}
+
+.tax-category-svg {
+  width: 100%;
+  height: 8px;
+  display: block;
+}
+
+.tax-category-fill-deductible {
+  fill: #10b981;
+}
+
+.tax-category-fill-non-deductible {
+  fill: #ef4444;
+}
+
+.tax-months-chart {
+  height: 160px;
+}
+
+.tax-month-bar {
+  width: 100%;
+  height: 100px;
+  display: block;
+}
+
+.tax-month-bar-fill {
+  fill: #0d6efd;
+  rx: 4;
+  ry: 4;
+}
+
+.tax-month-label {
+  font-size: 0.75rem;
+}

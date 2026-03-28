@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import './Layout.css';
 
 const navItems = [
   { to: '/', label: '📊 Dashboard' },
@@ -8,44 +9,53 @@ const navItems = [
 
 export default function Layout() {
   return (
-    <div className="d-flex" style={{ minHeight: '100vh' }}>
-      {/* Sidebar - Offcanvas on mobile, fixed on desktop */}
-      <nav
-        className="offcanvas offcanvas-start d-md-flex flex-column"
-        id="sidebar"
-        style={{
-          width: '240px',
-          background: '#1E293B',
-          color: '#fff',
-          zIndex: 1040,
-        }}
-      >
-        <div className="offcanvas-header d-md-none">
-          <h5 className="offcanvas-title">Menu</h5>
+    <div className="d-flex layout-shell">
+      {/* Sidebar - Always visible on desktop, offcanvas on mobile */}
+      <nav className="d-none d-md-flex flex-column layout-sidebar" id="sidebar">
+        <div className="layout-sidebar-header">
+          <h1 className="layout-sidebar-title">
+            💰 ExpenseTracker
+          </h1>
+          <p className="layout-sidebar-subtitle">Tax insights & tracking</p>
+        </div>
+        <nav className="layout-sidebar-nav">
+          {navItems.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) => `layout-nav-link${isActive ? ' layout-nav-link-active' : ''}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </nav>
+
+      {/* Mobile sidebar - Offcanvas drawer */}
+      <nav className="offcanvas offcanvas-start d-md-none layout-mobile-sidebar" id="mobileSidebar">
+        <div className="offcanvas-header">
+          <h5 className="offcanvas-title layout-offcanvas-title">Menu</h5>
           <button
             type="button"
             className="btn-close btn-close-white"
             data-bs-dismiss="offcanvas"
           ></button>
         </div>
-        <div className="p-4 border-bottom" style={{ borderColor: '#334155' }}>
-          <h1 className="mb-2" style={{ fontSize: '20px', fontWeight: 700, color: '#F1F5F9' }}>
+        <div className="layout-mobile-sidebar-header">
+          <h1 className="layout-mobile-sidebar-title">
             💰 ExpenseTracker
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94A3B8' }}>Tax insights & tracking</p>
+          <p className="layout-sidebar-subtitle">Tax insights & tracking</p>
         </div>
-        <nav className="mt-3 flex-grow-1">
+        <nav className="layout-mobile-sidebar-nav">
           {navItems.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              className={({ isActive }) =>
-                `nav-link d-block px-4 py-3 ${
-                  isActive ? 'bg-primary text-white border-start border-4 border-info' : 'text-secondary'
-                }`
-              }
-              style={{ textDecoration: 'none', fontSize: '14px' }}
+              className={({ isActive }) => `layout-nav-link${isActive ? ' layout-nav-link-active' : ''}`}
+              data-bs-dismiss="offcanvas"
             >
               {item.label}
             </NavLink>
@@ -54,21 +64,24 @@ export default function Layout() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-grow-1" style={{ background: '#F8FAFC', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-        {/* Top navbar for mobile */}
-        <div className="navbar navbar-expand-md navbar-dark bg-dark d-md-none sticky-top">
+      <main className="flex-grow-1 layout-main">
+        {/* Top navbar for mobile - Hamburger menu only visible on mobile */}
+        <nav className="navbar navbar-dark bg-dark d-md-none sticky-top">
           <div className="container-fluid">
             <button
-              className="navbar-toggler"
               type="button"
               data-bs-toggle="offcanvas"
-              data-bs-target="#sidebar"
+              data-bs-target="#mobileSidebar"
+              aria-controls="mobileSidebar"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
+              className="navbar-toggler layout-navbar-toggler"
             >
               <span className="navbar-toggler-icon"></span>
             </button>
-            <span className="navbar-brand mb-0 h1 ms-2">ExpenseTracker</span>
+            <span className="navbar-brand mb-0 h5 ms-2 layout-navbar-brand">ExpenseTracker</span>
           </div>
-        </div>
+        </nav>
 
         {/* Content Area */}
         <div className="flex-grow-1 overflow-auto">

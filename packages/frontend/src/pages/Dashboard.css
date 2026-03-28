@@ -1,0 +1,45 @@
+.dashboard-card-total {
+  background: #eff6ff;
+}
+
+.dashboard-card-deductible {
+  background: #f0fdf4;
+}
+
+.dashboard-card-non-deductible {
+  background: #fff1f2;
+}
+
+.dashboard-card-count {
+  background: #f5f3ff;
+}
+
+.dashboard-card-value-total {
+  color: #3b82f6;
+}
+
+.dashboard-card-value-deductible {
+  color: #10b981;
+}
+
+.dashboard-card-value-non-deductible {
+  color: #ef4444;
+}
+
+.dashboard-card-value-count {
+  color: #8b5cf6;
+}
+
+.dashboard-progress-svg {
+  width: 100%;
+  height: 8px;
+  display: block;
+}
+
+.dashboard-progress-fill-deductible {
+  fill: #0d6efd;
+}
+
+.dashboard-progress-fill-non-deductible {
+  fill: #6c757d;
+}

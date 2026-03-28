@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchInsights, fetchExpenses } from '../api';
 import { InsightsSummary, Expense } from '../types';
+import './Dashboard.css';
 
 export default function Dashboard() {
   const [insights, setInsights] = useState<InsightsSummary | null>(null);
@@ -28,10 +29,10 @@ export default function Dashboard() {
     );
 
   const cards = [
-    { label: 'Total Expenses', value: `$${(insights?.totalExpenses ?? 0).toFixed(2)}`, color: '#3B82F6', bg: '#EFF6FF' },
-    { label: 'Tax Deductible', value: `$${(insights?.totalDeductible ?? 0).toFixed(2)}`, color: '#10B981', bg: '#F0FDF4' },
-    { label: 'Non-Deductible', value: `$${(insights?.totalNonDeductible ?? 0).toFixed(2)}`, color: '#EF4444', bg: '#FFF1F2' },
-    { label: '# of Expenses', value: String(totalCount), color: '#8B5CF6', bg: '#F5F3FF' },
+    { label: 'Total Expenses', value: `$${(insights?.totalExpenses ?? 0).toFixed(2)}`, tone: 'total' },
+    { label: 'Tax Deductible', value: `$${(insights?.totalDeductible ?? 0).toFixed(2)}`, tone: 'deductible' },
+    { label: 'Non-Deductible', value: `$${(insights?.totalNonDeductible ?? 0).toFixed(2)}`, tone: 'non-deductible' },
+    { label: '# of Expenses', value: String(totalCount), tone: 'count' },
   ];
 
   const maxCat = Math.max(...(insights?.byCategory.map(c => c.total) ?? [1]));
@@ -45,10 +46,10 @@ export default function Dashboard() {
       <div className="row g-3 mb-4 mb-md-5">
         {cards.map(card => (
           <div key={card.label} className="col-12 col-sm-6 col-lg-3">
-            <div className="card border-0 h-100" style={{ background: card.bg }}>
+            <div className={`card border-0 h-100 dashboard-card dashboard-card-${card.tone}`}>
               <div className="card-body">
                 <p className="card-text text-muted small mb-2">{card.label}</p>
-                <p className="fw-bold fs-4" style={{ color: card.color }}>
+                <p className={`fw-bold fs-4 dashboard-card-value dashboard-card-value-${card.tone}`}>
                   {card.value}
                 </p>
               </div>
@@ -112,13 +113,15 @@ export default function Dashboard() {
                         <span className="fw-bold">${cat.total.toFixed(2)}</span>
                       </div>
                       <div className="progress" role="progressbar">
-                        <div
-                          className="progress-bar"
-                          style={{
-                            width: `${(cat.total / maxCat) * 100}%`,
-                            background: cat.taxDeductible ? '#0d6efd' : '#6c757d',
-                          }}
-                        ></div>
+                        <svg className="dashboard-progress-svg" viewBox="0 0 100 8" preserveAspectRatio="none" role="img" aria-label={`${cat.category} progress`}>
+                          <rect
+                            x="0"
+                            y="0"
+                            width={Math.max(0, Math.min(100, (cat.total / maxCat) * 100))}
+                            height="8"
+                            className={cat.taxDeductible ? 'dashboard-progress-fill-deductible' : 'dashboard-progress-fill-non-deductible'}
+                          />
+                        </svg>
                       </div>
                     </div>
                   ))}

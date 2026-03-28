@@ -1,0 +1,167 @@
+/* Global responsive styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Hamburger Menu Styling */
+.navbar-toggler {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.navbar-toggler:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Offcanvas Styling */
+.offcanvas {
+  --bs-offcanvas-width: 240px !important;
+}
+
+.offcanvas-header {
+  background-color: #1E293B;
+  border-bottom: 1px solid #334155;
+  padding: 16px 24px;
+}
+
+.offcanvas-body {
+  padding: 0;
+  background-color: #1E293B;
+}
+
+/* Mobile navbar styling */
+.navbar.d-md-none {
+  --bs-navbar-bg: #1F2937;
+}
+
+/* Hide hamburger menu on desktop */
+@media (min-width: 768px) {
+  .navbar.d-md-none {
+    display: none !important;
+  }
+
+  .offcanvas.d-md-none {
+    display: none !important;
+  }
+
+  .navbar-toggler {
+    display: none !important;
+  }
+}
+
+/* Responsive grid for dashboard cards and layouts */
+@media (max-width: 768px) {
+  div[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  div[style*="gridTemplateColumns: 'repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Adjust padding on mobile */
+  main > div {
+    padding: 16px !important;
+  }
+
+  /* Fix table responsiveness */
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  /* Adjust modal on mobile */
+  div[style*="position: 'fixed'"][style*="inset: 0"] {
+    padding: 12px !important;
+  }
+
+  div[style*="width: '90%'"],
+  div[style*="maxWidth: 480"] {
+    width: 95% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Flexbox utilities for Bootstrap compatibility */
+.d-flex {
+  display: flex;
+}
+
+.flex-grow-1 {
+  flex-grow: 1;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+/* Spinner styling */
+.spinner-border {
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.2em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Table responsive scrolling */
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive > table {
+  min-width: 576px;
+}
+
+/* Button group responsiveness */
+@media (max-width: 576px) {
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .btn-group .btn {
+    flex: 1;
+    min-width: 70px;
+  }
+}
+
+/* Ensure offcanvas is not visible on desktop */
+@media (min-width: 768px) {
+  .offcanvas.d-md-none {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
