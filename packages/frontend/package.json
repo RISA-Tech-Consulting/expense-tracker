@@ -7,6 +7,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ionic/react": "^8.8.2",
+    "bootstrap": "^5.3.8",
+    "ionicons": "^8.0.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3"

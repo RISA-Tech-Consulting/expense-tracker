@@ -26,67 +26,81 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
     onSave({ title, amount: parseFloat(amount), category, date, description: description || undefined, taxDeductible });
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    border: '1px solid #CBD5E1',
-    borderRadius: 6,
-    fontSize: 14,
-    boxSizing: 'border-box',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    marginBottom: 4,
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#374151',
-  };
-
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 12, padding: 32, width: 480, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-        <h2 style={{ margin: '0 0 24px', fontSize: 20, color: '#1E293B' }}>
-          {expense ? 'Edit Expense' : 'Add Expense'}
-        </h2>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Title *</label>
-            <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
+    <div className="modal d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header border-bottom">
+            <h5 className="modal-title">{expense ? 'Edit Expense' : 'Add Expense'}</h5>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Amount ($) *</label>
-            <input style={inputStyle} type="number" step="0.01" min="0" value={amount} onChange={e => setAmount(e.target.value)} required />
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Category *</label>
-            <select style={inputStyle} value={category} onChange={e => setCategory(e.target.value)}>
-              {categories.map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Date *</label>
-            <input style={inputStyle} type="date" value={date} onChange={e => setDate(e.target.value)} required />
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Description</label>
-            <textarea style={{ ...inputStyle, height: 80, resize: 'vertical' }} value={description} onChange={e => setDescription(e.target.value)} />
-          </div>
-          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" id="taxDeductible" checked={taxDeductible} onChange={e => setTaxDeductible(e.target.checked)} />
-            <label htmlFor="taxDeductible" style={{ fontSize: 14, color: '#374151' }}>Tax Deductible</label>
-          </div>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #CBD5E1', background: 'white', cursor: 'pointer', fontSize: 14 }}>
-              Cancel
-            </button>
-            <button type="submit" style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: '#3B82F6', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-              {expense ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label className="form-label">
+                  Title <span className="text-danger">*</span>
+                </label>
+                <input className="form-control" value={title} onChange={e => setTitle(e.target.value)} required />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">
+                  Amount ($) <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">
+                  Category <span className="text-danger">*</span>
+                </label>
+                <select className="form-select" value={category} onChange={e => setCategory(e.target.value)}>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="form-label">
+                  Date <span className="text-danger">*</span>
+                </label>
+                <input className="form-control" type="date" value={date} onChange={e => setDate(e.target.value)} required />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Description</label>
+                <textarea className="form-control" rows={3} value={description} onChange={e => setDescription(e.target.value)} />
+              </div>
+              <div className="form-check mb-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="taxDeductible"
+                  checked={taxDeductible}
+                  onChange={e => setTaxDeductible(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="taxDeductible">
+                  Tax Deductible
+                </label>
+              </div>
+            </div>
+            <div className="modal-footer border-top">
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                {expense ? 'Update' : 'Create'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

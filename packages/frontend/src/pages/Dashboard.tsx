@@ -17,7 +17,15 @@ export default function Dashboard() {
     }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 40, color: '#64748B' }}>Loading...</div>;
+  if (loading)
+    return (
+      <div className="p-5 text-muted">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        Loading...
+      </div>
+    );
 
   const cards = [
     { label: 'Total Expenses', value: `$${(insights?.totalExpenses ?? 0).toFixed(2)}`, color: '#3B82F6', bg: '#EFF6FF' },
@@ -29,71 +37,95 @@ export default function Dashboard() {
   const maxCat = Math.max(...(insights?.byCategory.map(c => c.total) ?? [1]));
 
   return (
-    <div style={{ padding: 32 }}>
-      <h2 style={{ margin: '0 0 8px', fontSize: 24, color: '#1E293B' }}>Dashboard</h2>
-      <p style={{ margin: '0 0 32px', color: '#64748B' }}>Overview of your expenses and tax insights</p>
+    <div className="p-3 p-md-5">
+      <h2 className="mb-2">Dashboard</h2>
+      <p className="text-muted mb-4 mb-md-5">Overview of your expenses and tax insights</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      {/* Stat Cards */}
+      <div className="row g-3 mb-4 mb-md-5">
         {cards.map(card => (
-          <div key={card.label} style={{ background: card.bg, borderRadius: 12, padding: 24, border: `1px solid ${card.color}22` }}>
-            <p style={{ margin: '0 0 8px', fontSize: 13, color: '#64748B', fontWeight: 500 }}>{card.label}</p>
-            <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: card.color }}>{card.value}</p>
+          <div key={card.label} className="col-12 col-sm-6 col-lg-3">
+            <div className="card border-0 h-100" style={{ background: card.bg }}>
+              <div className="card-body">
+                <p className="card-text text-muted small mb-2">{card.label}</p>
+                <p className="fw-bold fs-4" style={{ color: card.color }}>
+                  {card.value}
+                </p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-        <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #E2E8F0' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16, color: '#1E293B' }}>Recent Expenses</h3>
-          {recentExpenses.length === 0 ? (
-            <p style={{ color: '#94A3B8', fontSize: 14 }}>No expenses yet.</p>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
-                  {['Title', 'Category', 'Amount', 'Date'].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, color: '#64748B', fontWeight: 600 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentExpenses.map(e => (
-                  <tr key={e.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '10px 12px', fontSize: 14 }}>{e.title}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 13, color: '#64748B' }}>{e.category}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 14, fontWeight: 600 }}>${e.amount.toFixed(2)}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 13, color: '#64748B' }}>{e.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* Recent Expenses & Category Breakdown */}
+      <div className="row g-4">
+        <div className="col-12 col-lg-6">
+          <div className="card border-0">
+            <div className="card-header bg-transparent border-bottom">
+              <h5 className="mb-0">Recent Expenses</h5>
+            </div>
+            <div className="card-body">
+              {recentExpenses.length === 0 ? (
+                <p className="text-muted">No expenses yet.</p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover mb-0 small">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentExpenses.map(e => (
+                        <tr key={e.id}>
+                          <td className="fw-500">{e.title}</td>
+                          <td className="text-muted">{e.category}</td>
+                          <td className="fw-bold">${e.amount.toFixed(2)}</td>
+                          <td className="text-muted">{e.date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #E2E8F0' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16, color: '#1E293B' }}>Category Breakdown</h3>
-          {(insights?.byCategory ?? []).length === 0 ? (
-            <p style={{ color: '#94A3B8', fontSize: 14 }}>No data yet.</p>
-          ) : (
-            <div>
-              {insights?.byCategory.map(cat => (
-                <div key={cat.category} style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, color: '#374151' }}>{cat.category}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1E293B' }}>${cat.total.toFixed(2)}</span>
-                  </div>
-                  <div style={{ background: '#F1F5F9', borderRadius: 4, height: 8 }}>
-                    <div style={{
-                      height: 8,
-                      borderRadius: 4,
-                      background: cat.taxDeductible ? '#3B82F6' : '#94A3B8',
-                      width: `${(cat.total / maxCat) * 100}%`,
-                    }} />
-                  </div>
-                </div>
-              ))}
+        <div className="col-12 col-lg-6">
+          <div className="card border-0">
+            <div className="card-header bg-transparent border-bottom">
+              <h5 className="mb-0">Category Breakdown</h5>
             </div>
-          )}
+            <div className="card-body">
+              {(insights?.byCategory ?? []).length === 0 ? (
+                <p className="text-muted">No data yet.</p>
+              ) : (
+                <div>
+                  {insights?.byCategory.map(cat => (
+                    <div key={cat.category} className="mb-3">
+                      <div className="d-flex justify-content-between mb-1 small">
+                        <span className="fw-500">{cat.category}</span>
+                        <span className="fw-bold">${cat.total.toFixed(2)}</span>
+                      </div>
+                      <div className="progress" role="progressbar">
+                        <div
+                          className="progress-bar"
+                          style={{
+                            width: `${(cat.total / maxCat) * 100}%`,
+                            background: cat.taxDeductible ? '#0d6efd' : '#6c757d',
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
