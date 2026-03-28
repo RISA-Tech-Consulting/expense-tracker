@@ -50,15 +50,54 @@
   border-left-color: #60a5fa;
 }
 
+/* Mobile sidebar drawer (React-controlled) */
 .layout-mobile-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
   width: 240px;
   background: #1e293b;
   color: #fff;
+  z-index: 1050;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-mobile-sidebar-open {
+  transform: translateX(0);
+}
+
+.layout-mobile-sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #334155;
+}
+
+.layout-mobile-close {
+  background: none;
+  border: none;
+  color: #f1f5f9;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.layout-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 1040;
 }
 
 .layout-offcanvas-title {
   color: #f1f5f9;
+  margin: 0;
 }
 
 .layout-mobile-sidebar-header {
@@ -91,4 +130,15 @@
 
 .layout-navbar-brand {
   font-weight: 700;
+}
+
+/* Hide mobile sidebar on desktop */
+@media (min-width: 768px) {
+  .layout-mobile-sidebar {
+    display: none;
+  }
+
+  .layout-mobile-backdrop {
+    display: none;
+  }
 }

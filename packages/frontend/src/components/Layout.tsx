@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import './Layout.css';
 
 const navItems = [
@@ -8,9 +9,17 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNavClick = useCallback((to: string) => {
+    setSidebarOpen(false);
+    navigate(to);
+  }, [navigate]);
+
   return (
     <div className="d-flex layout-shell">
-      {/* Sidebar - Always visible on desktop, offcanvas on mobile */}
+      {/* Sidebar - Always visible on desktop */}
       <nav className="d-none d-md-flex flex-column layout-sidebar" id="sidebar">
         <div className="layout-sidebar-header">
           <h1 className="layout-sidebar-title">
@@ -32,15 +41,26 @@ export default function Layout() {
         </nav>
       </nav>
 
-      {/* Mobile sidebar - Offcanvas drawer */}
-      <nav className="offcanvas offcanvas-start d-md-none layout-mobile-sidebar" id="mobileSidebar">
-        <div className="offcanvas-header">
-          <h5 className="offcanvas-title layout-offcanvas-title">Menu</h5>
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="layout-mobile-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <nav className={`layout-mobile-sidebar${sidebarOpen ? ' layout-mobile-sidebar-open' : ''}`}>
+        <div className="layout-mobile-sidebar-top">
+          <h5 className="layout-offcanvas-title">Menu</h5>
           <button
             type="button"
-            className="btn-close btn-close-white"
-            data-bs-dismiss="offcanvas"
-          ></button>
+            className="layout-mobile-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
         </div>
         <div className="layout-mobile-sidebar-header">
           <h1 className="layout-mobile-sidebar-title">
@@ -55,7 +75,10 @@ export default function Layout() {
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) => `layout-nav-link${isActive ? ' layout-nav-link-active' : ''}`}
-              data-bs-dismiss="offcanvas"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavClick(item.to);
+              }}
             >
               {item.label}
             </NavLink>
@@ -70,12 +93,9 @@ export default function Layout() {
           <div className="container-fluid">
             <button
               type="button"
-              data-bs-toggle="offcanvas"
-              data-bs-target="#mobileSidebar"
-              aria-controls="mobileSidebar"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
               className="navbar-toggler layout-navbar-toggler"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Toggle navigation"
             >
               <span className="navbar-toggler-icon"></span>
             </button>

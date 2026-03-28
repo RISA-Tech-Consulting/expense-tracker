@@ -24,21 +24,7 @@ body {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
-/* Offcanvas Styling */
-.offcanvas {
-  --bs-offcanvas-width: 240px !important;
-}
-
-.offcanvas-header {
-  background-color: #1E293B;
-  border-bottom: 1px solid #334155;
-  padding: 16px 24px;
-}
-
-.offcanvas-body {
-  padding: 0;
-  background-color: #1E293B;
-}
+/* Offcanvas Styling - handled by Layout.css */
 
 /* Mobile navbar styling */
 .navbar.d-md-none {
@@ -48,10 +34,6 @@ body {
 /* Hide hamburger menu on desktop */
 @media (min-width: 768px) {
   .navbar.d-md-none {
-    display: none !important;
-  }
-
-  .offcanvas.d-md-none {
     display: none !important;
   }
 
@@ -158,10 +140,4 @@ body {
   }
 }
 
-/* Ensure offcanvas is not visible on desktop */
-@media (min-width: 768px) {
-  .offcanvas.d-md-none {
-    visibility: hidden;
-    pointer-events: none;
-  }
-}
+/* Ensure mobile sidebar handled by Layout.css */
