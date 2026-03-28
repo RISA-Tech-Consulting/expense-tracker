@@ -73,8 +73,14 @@ router.post('/', (req: Request, res: Response) => {
       description?: string;
       taxDeductible?: boolean;
     };
-    if (!title || amount === undefined || !category || !date) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const missing = [
+      !title && 'title',
+      amount === undefined && 'amount',
+      !category && 'category',
+      !date && 'date',
+    ].filter(Boolean);
+    if (missing.length > 0) {
+      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
     }
     const result = db.prepare(
       'INSERT INTO expenses (title, amount, category, date, description, taxDeductible) VALUES (?, ?, ?, ?, ?, ?)'
