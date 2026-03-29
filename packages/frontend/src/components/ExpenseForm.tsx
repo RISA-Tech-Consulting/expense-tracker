@@ -5,7 +5,7 @@ import './ExpenseForm.css';
 interface Props {
   expense?: Expense;
   categories: Category[];
-  onSave: (data: Omit<Expense, 'id'>) => void;
+  onSave: (data: Omit<Expense, 'id'>, attachment?: File) => void;
   onClose: () => void;
 }
 
@@ -16,6 +16,7 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
   const [date, setDate] = useState(expense?.date ?? new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState(expense?.description ?? '');
   const [taxDeductible, setTaxDeductible] = useState(expense?.taxDeductible ?? false);
+  const [attachment, setAttachment] = useState<File | undefined>();
 
   useEffect(() => {
     const cat = categories.find(c => c.name === category);
@@ -24,7 +25,7 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ title, amount: parseFloat(amount), category, date, description: description || undefined, taxDeductible });
+    onSave({ title, amount: parseFloat(amount), category, date, description: description || undefined, taxDeductible }, attachment);
   };
 
   return (
@@ -90,6 +91,23 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
                 <label className="form-check-label" htmlFor="taxDeductible">
                   Tax Deductible
                 </label>
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Attachment</label>
+                <input
+                  className="form-control"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  onChange={e => setAttachment(e.target.files?.[0])}
+                />
+                <div className="form-text">PDF, JPEG, PNG, or WebP (max 5 MB)</div>
+                {expense?.attachment && !attachment && (
+                  <div className="mt-1">
+                    <a href={`/api/uploads/${expense.attachment}`} target="_blank" rel="noopener noreferrer" className="small">
+                      View current attachment
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer border-top">

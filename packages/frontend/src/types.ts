@@ -6,6 +6,7 @@ export interface Expense {
   date: string;
   description?: string;
   taxDeductible: boolean;
+  attachment?: string;
 }
 
 export interface Category {

@@ -28,11 +28,11 @@ export default function Expenses() {
     load();
   }, [load]);
 
-  const handleSave = async (data: Omit<Expense, 'id'>) => {
+  const handleSave = async (data: Omit<Expense, 'id'>, attachment?: File) => {
     if (editExpense) {
-      await updateExpense(editExpense.id, data);
+      await updateExpense(editExpense.id, data, attachment);
     } else {
-      await createExpense(data);
+      await createExpense(data, attachment);
     }
     setShowForm(false);
     setEditExpense(undefined);
@@ -121,6 +121,7 @@ export default function Expenses() {
                     <th className="small">Amount</th>
                     <th className="small">Date</th>
                     <th className="small">Status</th>
+                    <th className="small">Attachment</th>
                     <th className="small">Actions</th>
                   </tr>
                 </thead>

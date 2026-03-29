@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import rateLimit from 'express-rate-limit';
 import expensesRouter from './routes/expenses';
 import categoriesRouter from './routes/categories';
@@ -19,6 +20,7 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 
+app.use('/api/uploads', express.static(path.join(__dirname, '../data/uploads')));
 app.use('/api/expenses', expensesRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/insights', insightsRouter);

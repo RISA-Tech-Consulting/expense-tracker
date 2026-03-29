@@ -29,9 +29,16 @@ db.exec(`
     category TEXT NOT NULL,
     date TEXT NOT NULL,
     description TEXT,
-    taxDeductible INTEGER NOT NULL DEFAULT 0
+    taxDeductible INTEGER NOT NULL DEFAULT 0,
+    attachment TEXT
   );
 `);
+
+// Migration: add attachment column for existing databases
+const columns = db.pragma('table_info(expenses)') as { name: string }[];
+if (!columns.some(c => c.name === 'attachment')) {
+  db.exec('ALTER TABLE expenses ADD COLUMN attachment TEXT');
+}
 
 const defaultCategories = [
   { name: 'Business Travel', taxDeductible: 1, color: '#3B82F6' },

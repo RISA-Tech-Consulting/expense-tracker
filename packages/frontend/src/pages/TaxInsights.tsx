@@ -26,7 +26,7 @@ export default function TaxInsights() {
       </div>
     );
 
-  const estimatedSavings = (insights?.totalDeductible ?? 0) * 0.3;
+  const estimatedSavings = (insights?.totalDeductible ?? 0) * .9;
   const maxCat = Math.max(...(insights?.byCategory.map(c => c.total) ?? [1]), 1);
   const maxMonth = Math.max(...(insights?.byMonth.map(m => m.total) ?? [1]), 1);
 

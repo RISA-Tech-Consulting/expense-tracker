@@ -24,20 +24,36 @@ export async function fetchExpenses(filters?: {
   return handleResponse<Expense[]>(res);
 }
 
-export async function createExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
+export async function createExpense(data: Omit<Expense, 'id'>, attachment?: File): Promise<Expense> {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('amount', data.amount.toString());
+  formData.append('category', data.category);
+  formData.append('date', data.date);
+  if (data.description) formData.append('description', data.description);
+  formData.append('taxDeductible', data.taxDeductible ? 'true' : 'false');
+  if (attachment) formData.append('attachment', attachment);
+
   const res = await fetch(`${BASE}/expenses`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: formData,
   });
   return handleResponse<Expense>(res);
 }
 
-export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'>>): Promise<Expense> {
+export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'>>, attachment?: File): Promise<Expense> {
+  const formData = new FormData();
+  if (data.title !== undefined) formData.append('title', data.title);
+  if (data.amount !== undefined) formData.append('amount', data.amount.toString());
+  if (data.category !== undefined) formData.append('category', data.category);
+  if (data.date !== undefined) formData.append('date', data.date);
+  if (data.description !== undefined) formData.append('description', data.description);
+  if (data.taxDeductible !== undefined) formData.append('taxDeductible', data.taxDeductible ? 'true' : 'false');
+  if (attachment) formData.append('attachment', attachment);
+
   const res = await fetch(`${BASE}/expenses/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: formData,
   });
   return handleResponse<Expense>(res);
 }

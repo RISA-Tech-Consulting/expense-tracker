@@ -23,6 +23,15 @@ export default function ExpenseCard({ expense, onEdit, onDelete }: Props) {
         </span>
       </td>
       <td>
+        {expense.attachment ? (
+          <a href={`/api/uploads/${expense.attachment}`} target="_blank" rel="noopener noreferrer" className="small">
+            View
+          </a>
+        ) : (
+          <span className="text-muted small">—</span>
+        )}
+      </td>
+      <td>
         <div className="btn-group btn-group-sm" role="group">
           <button
             onClick={() => onEdit(expense)}
