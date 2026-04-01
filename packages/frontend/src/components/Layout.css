@@ -128,6 +128,17 @@
   padding: 8px 4px;
 }
 
+/* iOS PWA safe area support */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .navbar.sticky-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .layout-mobile-sidebar {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 .layout-navbar-brand {
   font-weight: 700;
 }
