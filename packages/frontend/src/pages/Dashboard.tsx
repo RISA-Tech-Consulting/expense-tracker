@@ -65,7 +65,7 @@ export default function Dashboard() {
           <div className="card border-0">
             <div className="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Recent Expenses</h5>
-              <Link to="/expenses" className="btn btn-sm btn-outline-primary"><i className="bi bi-list-ul me-1"></i>View All</Link>
+              <Link to="/" className="btn btn-sm btn-outline-primary"><i className="bi bi-list-ul me-1"></i>View All</Link>
             </div>
             <div className="card-body">
               {recentExpenses.length === 0 ? (

@@ -13,8 +13,8 @@ export default function App() {
     <BrowserRouter basename={basename}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/" element={<Expenses />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/insights" element={<TaxInsights />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/backup" element={<Backup />} />

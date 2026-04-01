@@ -3,8 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import './Layout.css';
 
 const navItems = [
-  { to: '/', label: '📊 Dashboard' },
-  { to: '/expenses', label: '💸 Expenses' },
+  { to: '/', label: '� Expenses' },
+  { to: '/dashboard', label: '📊 Dashboard' },
   { to: '/insights', label: '🧾 Tax Insights' },
   { to: '/settings', label: '⚙️ Settings' },
   { to: '/backup', label: '📦 Backup' },
