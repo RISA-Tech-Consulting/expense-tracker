@@ -8,6 +8,7 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterYear, setFilterYear] = useState('');
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -15,14 +16,20 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    let startDate = filterStart || undefined;
+    let endDate = filterEnd || undefined;
+    if (filterYear) {
+      startDate = startDate || `${filterYear}-01-01`;
+      endDate = endDate || `${filterYear}-12-31`;
+    }
     const [exps, cats] = await Promise.all([
-      fetchExpenses({ category: filterCategory || undefined, startDate: filterStart || undefined, endDate: filterEnd || undefined }),
+      fetchExpenses({ category: filterCategory || undefined, startDate, endDate }),
       fetchCategories(),
     ]);
     setExpenses(exps);
     setCategories(cats);
     setLoading(false);
-  }, [filterCategory, filterStart, filterEnd]);
+  }, [filterCategory, filterYear, filterStart, filterEnd]);
 
   useEffect(() => {
     load();
@@ -59,7 +66,7 @@ export default function Expenses() {
           }}
           className="btn btn-primary btn-sm"
         >
-          + Add Expense
+          <i className="bi bi-plus-lg me-1"></i>Add Expense
         </button>
       </div>
 
@@ -67,7 +74,7 @@ export default function Expenses() {
       <div className="card border-0 mb-4">
         <div className="card-body p-3">
           <div className="row g-2">
-            <div className="col-12 col-sm-6 col-lg-3">
+            <div className="col-6 col-sm-4 col-lg-2">
               <select className="form-select form-select-sm" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
                 <option value="">All Categories</option>
                 {categories.map(c => (
@@ -77,16 +84,25 @@ export default function Expenses() {
                 ))}
               </select>
             </div>
-            <div className="col-12 col-sm-6 col-lg-3">
+            <div className="col-6 col-sm-4 col-lg-2">
+              <select className="form-select form-select-sm" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+                <option value="">All Years</option>
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-sm-4 col-lg-3">
               <input className="form-control form-control-sm" type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} />
             </div>
-            <div className="col-12 col-sm-6 col-lg-3">
+            <div className="col-6 col-sm-4 col-lg-3">
               <input className="form-control form-control-sm" type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} />
             </div>
-            <div className="col-12 col-sm-6 col-lg-3">
+            <div className="col-12 col-sm-4 col-lg-2">
               <button
                 onClick={() => {
                   setFilterCategory('');
+                  setFilterYear('');
                   setFilterStart('');
                   setFilterEnd('');
                 }}
@@ -112,34 +128,52 @@ export default function Expenses() {
           ) : expenses.length === 0 ? (
             <p className="p-4 text-center text-muted mb-0">No expenses found.</p>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th className="small">Title</th>
-                    <th className="small">Category</th>
-                    <th className="small">Amount</th>
-                    <th className="small">Date</th>
-                    <th className="small">Status</th>
-                    <th className="small">Attachment</th>
-                    <th className="small">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map(e => (
-                    <ExpenseCard
-                      key={e.id}
-                      expense={e}
-                      onEdit={exp => {
-                        setEditExpense(exp);
-                        setShowForm(true);
-                      }}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Desktop table view */}
+              <div className="table-responsive d-none d-md-block">
+                <table className="table table-hover mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="small">Title</th>
+                      <th className="small">Category</th>
+                      <th className="small">Amount</th>
+                      <th className="small">Date</th>
+                      <th className="small">Status</th>
+                      <th className="small">Attachment</th>
+                      <th className="small">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenses.map(e => (
+                      <ExpenseCard
+                        key={e.id}
+                        expense={e}
+                        onEdit={exp => {
+                          setEditExpense(exp);
+                          setShowForm(true);
+                        }}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile card view */}
+              <div className="d-md-none">
+                {expenses.map(e => (
+                  <ExpenseCard
+                    key={e.id}
+                    expense={e}
+                    variant="card"
+                    onEdit={exp => {
+                      setEditExpense(exp);
+                      setShowForm(true);
+                    }}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
