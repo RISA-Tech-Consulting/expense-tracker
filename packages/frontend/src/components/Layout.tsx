@@ -7,6 +7,7 @@ const navItems = [
   { to: '/expenses', label: '💸 Expenses' },
   { to: '/insights', label: '🧾 Tax Insights' },
   { to: '/settings', label: '⚙️ Settings' },
+  { to: '/backup', label: '📦 Backup' },
 ];
 
 export default function Layout() {

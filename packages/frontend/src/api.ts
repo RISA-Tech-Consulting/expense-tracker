@@ -192,3 +192,89 @@ export async function fetchInsights(): Promise<InsightsSummary> {
     deductiblePercentage,
   };
 }
+
+// ── Backup & Restore ──
+
+export interface BackupData {
+  version: number;
+  createdAt: string;
+  expenses: Omit<Expense, 'id'>[];
+  categories: Omit<Category, 'id'>[];
+  settings: { key: string; value: string }[];
+}
+
+export async function exportBackup(): Promise<BackupData> {
+  await ready;
+  const expenses = (await db.expenses.toArray()).map(({ id, ...rest }) => rest);
+  const categories = (await db.categories.toArray()).map(({ id, ...rest }) => rest);
+  const settings = await db.settings.toArray();
+  return {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    expenses,
+    categories,
+    settings,
+  };
+}
+
+export async function importBackup(data: BackupData): Promise<void> {
+  await ready;
+  await db.transaction('rw', db.expenses, db.categories, db.settings, async () => {
+    await db.expenses.clear();
+    await db.categories.clear();
+    await db.settings.clear();
+    if (data.categories.length) await db.categories.bulkAdd(data.categories);
+    if (data.expenses.length) await db.expenses.bulkAdd(data.expenses);
+    if (data.settings.length) await db.settings.bulkPut(data.settings);
+  });
+}
+
+export function downloadBackupFile(data: BackupData): void {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `expense-tracker-backup-${data.createdAt.slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export type BackupSchedule = 'off' | 'daily' | 'weekly' | 'monthly';
+
+export async function getBackupSchedule(): Promise<BackupSchedule> {
+  await ready;
+  const row = await db.settings.get('backupSchedule');
+  return (row?.value as BackupSchedule) || 'off';
+}
+
+export async function setBackupSchedule(schedule: BackupSchedule): Promise<void> {
+  await ready;
+  await db.settings.put({ key: 'backupSchedule', value: schedule });
+}
+
+export async function getLastBackupTime(): Promise<string | null> {
+  await ready;
+  const row = await db.settings.get('lastBackupTime');
+  return row?.value ?? null;
+}
+
+export async function setLastBackupTime(time: string): Promise<void> {
+  await ready;
+  await db.settings.put({ key: 'lastBackupTime', value: time });
+}
+
+export function isBackupDue(schedule: BackupSchedule, lastBackup: string | null): boolean {
+  if (schedule === 'off') return false;
+  if (!lastBackup) return true;
+  const last = new Date(lastBackup).getTime();
+  const now = Date.now();
+  const diff = now - last;
+  const day = 24 * 60 * 60 * 1000;
+  switch (schedule) {
+    case 'daily': return diff >= day;
+    case 'weekly': return diff >= 7 * day;
+    case 'monthly': return diff >= 30 * day;
+    default: return false;
+  }
+}
