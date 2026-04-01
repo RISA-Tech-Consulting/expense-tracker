@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchExpenses, fetchCategories, createExpense, updateExpense, deleteExpense } from '../api';
 import { Expense, Category } from '../types';
 import ExpenseForm from '../components/ExpenseForm';
@@ -58,7 +59,7 @@ export default function Expenses() {
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2 gap-3">
         <div>
           <h2 className="mb-2">Expenses</h2>
-          <p className="text-muted mb-0">Manage and track your expenses</p>
+          <p className="text-muted mb-0">Manage and track your expenses · <Link to="/" className="text-decoration-none"><i className="bi bi-speedometer2 me-1"></i>Dashboard</Link></p>
         </div>
         <button
           onClick={() => {
