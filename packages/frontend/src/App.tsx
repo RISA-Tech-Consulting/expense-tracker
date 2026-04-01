@@ -6,9 +6,11 @@ import TaxInsights from './pages/TaxInsights';
 import Settings from './pages/Settings';
 import Backup from './pages/Backup';
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
