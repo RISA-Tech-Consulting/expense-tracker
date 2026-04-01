@@ -47,7 +47,8 @@ export default function Expenses() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this expense?')) return;
+    const expense = expenses.find(e => e.id === id);
+    if (!confirm(`Delete "${expense?.title ?? 'this expense'}"?`)) return;
     await deleteExpense(id);
     load();
   };
