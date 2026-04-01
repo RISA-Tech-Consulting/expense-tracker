@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { fetchInsights } from '../api';
+import { fetchInsights, getTaxRate } from '../api';
 import { InsightsSummary } from '../types';
 import './TaxInsights.css';
 
 export default function TaxInsights() {
   const [insights, setInsights] = useState<InsightsSummary | null>(null);
+  const [taxRate, setTaxRate] = useState(30);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchInsights()
-      .then(data => {
+    Promise.all([fetchInsights(), getTaxRate()])
+      .then(([data, rate]) => {
         setInsights(data);
+        setTaxRate(rate);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -26,7 +28,7 @@ export default function TaxInsights() {
       </div>
     );
 
-  const estimatedSavings = (insights?.totalDeductible ?? 0) * .9;
+  const estimatedSavings = (insights?.totalDeductible ?? 0) * (taxRate / 100);
   const maxCat = Math.max(...(insights?.byCategory.map(c => c.total) ?? [1]), 1);
   const maxMonth = Math.max(...(insights?.byMonth.map(m => m.total) ?? [1]), 1);
 
@@ -40,7 +42,7 @@ export default function TaxInsights() {
         {[
           { label: 'Total Deductible', value: `$${(insights?.totalDeductible ?? 0).toFixed(2)}`, tone: 'deductible' },
           { label: 'Non-Deductible', value: `$${(insights?.totalNonDeductible ?? 0).toFixed(2)}`, tone: 'non-deductible' },
-          { label: 'Est. Tax Savings (30%)', value: `$${estimatedSavings.toFixed(2)}`, tone: 'savings' },
+          { label: `Est. Tax Savings (${taxRate}%)`, value: `$${estimatedSavings.toFixed(2)}`, tone: 'savings' },
         ].map(card => (
           <div key={card.label} className="col-12 col-sm-6 col-lg-4">
             <div className={`card border-0 h-100 tax-summary-card tax-summary-card-${card.tone}`}>
@@ -108,7 +110,7 @@ export default function TaxInsights() {
                     ['Total Expenses', `$${(insights?.totalExpenses ?? 0).toFixed(2)}`],
                     ['Deductible Expenses', `$${(insights?.totalDeductible ?? 0).toFixed(2)}`],
                     ['Deductible %', `${(insights?.deductiblePercentage ?? 0).toFixed(1)}%`],
-                    ['Assumed Tax Rate', '30%'],
+                    ['Assumed Tax Rate', `${taxRate}%`],
                     ['Estimated Savings', `$${estimatedSavings.toFixed(2)}`],
                   ].map(([label, value]) => (
                     <tr key={label}>

@@ -19,15 +19,26 @@ export interface CategoryRecord {
   color: string;
 }
 
+export interface SettingRecord {
+  key: string;
+  value: string;
+}
+
 class ExpenseTrackerDB extends Dexie {
   expenses!: Table<ExpenseRecord, number>;
   categories!: Table<CategoryRecord, number>;
+  settings!: Table<SettingRecord, string>;
 
   constructor() {
     super('ExpenseTrackerDB');
     this.version(1).stores({
       expenses: '++id, category, date, taxDeductible',
       categories: '++id, &name',
+    });
+    this.version(2).stores({
+      expenses: '++id, category, date, taxDeductible',
+      categories: '++id, &name',
+      settings: '&key',
     });
   }
 }
@@ -50,6 +61,11 @@ export async function seedDefaultCategories(): Promise<void> {
   const count = await db.categories.count();
   if (count === 0) {
     await db.categories.bulkAdd(DEFAULT_CATEGORIES);
+  }
+  // Seed default tax rate if not set
+  const taxRate = await db.settings.get('taxRate');
+  if (!taxRate) {
+    await db.settings.put({ key: 'taxRate', value: '90' });
   }
 }
 

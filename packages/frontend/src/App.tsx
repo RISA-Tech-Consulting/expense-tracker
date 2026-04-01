@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
 import TaxInsights from './pages/TaxInsights';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/insights" element={<TaxInsights />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

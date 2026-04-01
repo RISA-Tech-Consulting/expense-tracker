@@ -107,6 +107,40 @@ export async function fetchCategories(): Promise<Category[]> {
   }));
 }
 
+export async function createCategory(data: Omit<Category, 'id'>): Promise<Category> {
+  await ready;
+  const id = await db.categories.add({
+    name: data.name,
+    taxDeductible: data.taxDeductible,
+    color: data.color,
+  });
+  return { ...data, id: id as number };
+}
+
+export async function updateCategory(id: number, data: Partial<Omit<Category, 'id'>>): Promise<Category> {
+  await ready;
+  await db.categories.update(id, data);
+  const row = await db.categories.get(id);
+  if (!row) throw new Error('Category not found');
+  return { id: row.id!, name: row.name, taxDeductible: row.taxDeductible, color: row.color };
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  await ready;
+  await db.categories.delete(id);
+}
+
+export async function getTaxRate(): Promise<number> {
+  await ready;
+  const row = await db.settings.get('taxRate');
+  return row ? parseFloat(row.value) : 30;
+}
+
+export async function setTaxRate(rate: number): Promise<void> {
+  await ready;
+  await db.settings.put({ key: 'taxRate', value: String(rate) });
+}
+
 export async function fetchInsights(): Promise<InsightsSummary> {
   await ready;
   const allExpenses = await db.expenses.toArray();
