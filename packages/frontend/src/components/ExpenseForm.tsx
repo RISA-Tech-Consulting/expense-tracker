@@ -103,7 +103,7 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
                 <div className="form-text">PDF, JPEG, PNG, or WebP (max 5 MB)</div>
                 {expense?.attachment && !attachment && (
                   <div className="mt-1">
-                    <a href={`/api/uploads/${expense.attachment}`} target="_blank" rel="noopener noreferrer" className="small">
+                    <a href={expense.attachment} target="_blank" rel="noopener noreferrer" className="small">
                       View current attachment
                     </a>
                   </div>

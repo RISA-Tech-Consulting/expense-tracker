@@ -1,13 +1,16 @@
 import { Expense, Category, InsightsSummary } from './types';
+import db, { seedDefaultCategories } from './db';
 
-const BASE = '/api';
+// Ensure default categories exist on first use
+const ready = seedDefaultCategories();
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP ${res.status}`);
-  }
-  return res.json();
+function fileToDataURI(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export async function fetchExpenses(filters?: {
@@ -15,60 +18,143 @@ export async function fetchExpenses(filters?: {
   startDate?: string;
   endDate?: string;
 }): Promise<Expense[]> {
-  const params = new URLSearchParams();
-  if (filters?.category) params.set('category', filters.category);
-  if (filters?.startDate) params.set('startDate', filters.startDate);
-  if (filters?.endDate) params.set('endDate', filters.endDate);
-  const query = params.toString() ? `?${params}` : '';
-  const res = await fetch(`${BASE}/expenses${query}`);
-  return handleResponse<Expense[]>(res);
+  await ready;
+  let results = await db.expenses.orderBy('date').reverse().toArray();
+
+  if (filters?.category) {
+    results = results.filter(e => e.category === filters.category);
+  }
+  if (filters?.startDate) {
+    results = results.filter(e => e.date >= filters.startDate!);
+  }
+  if (filters?.endDate) {
+    results = results.filter(e => e.date <= filters.endDate!);
+  }
+
+  return results.map(r => ({
+    id: r.id!,
+    title: r.title,
+    amount: r.amount,
+    category: r.category,
+    date: r.date,
+    description: r.description,
+    taxDeductible: r.taxDeductible,
+    attachment: r.attachment,
+  }));
 }
 
 export async function createExpense(data: Omit<Expense, 'id'>, attachment?: File): Promise<Expense> {
-  const formData = new FormData();
-  formData.append('title', data.title);
-  formData.append('amount', data.amount.toString());
-  formData.append('category', data.category);
-  formData.append('date', data.date);
-  if (data.description) formData.append('description', data.description);
-  formData.append('taxDeductible', data.taxDeductible ? 'true' : 'false');
-  if (attachment) formData.append('attachment', attachment);
-
-  const res = await fetch(`${BASE}/expenses`, {
-    method: 'POST',
-    body: formData,
+  await ready;
+  let attachmentData: string | undefined;
+  if (attachment) {
+    attachmentData = await fileToDataURI(attachment);
+  }
+  const id = await db.expenses.add({
+    title: data.title,
+    amount: data.amount,
+    category: data.category,
+    date: data.date,
+    description: data.description,
+    taxDeductible: data.taxDeductible,
+    attachment: attachmentData,
+    attachmentName: attachment?.name,
   });
-  return handleResponse<Expense>(res);
+  return { ...data, id: id as number, attachment: attachmentData };
 }
 
 export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'>>, attachment?: File): Promise<Expense> {
-  const formData = new FormData();
-  if (data.title !== undefined) formData.append('title', data.title);
-  if (data.amount !== undefined) formData.append('amount', data.amount.toString());
-  if (data.category !== undefined) formData.append('category', data.category);
-  if (data.date !== undefined) formData.append('date', data.date);
-  if (data.description !== undefined) formData.append('description', data.description);
-  if (data.taxDeductible !== undefined) formData.append('taxDeductible', data.taxDeductible ? 'true' : 'false');
-  if (attachment) formData.append('attachment', attachment);
+  await ready;
+  const updates: Record<string, unknown> = {};
+  if (data.title !== undefined) updates.title = data.title;
+  if (data.amount !== undefined) updates.amount = data.amount;
+  if (data.category !== undefined) updates.category = data.category;
+  if (data.date !== undefined) updates.date = data.date;
+  if (data.description !== undefined) updates.description = data.description;
+  if (data.taxDeductible !== undefined) updates.taxDeductible = data.taxDeductible;
+  if (attachment) {
+    updates.attachment = await fileToDataURI(attachment);
+    updates.attachmentName = attachment.name;
+  }
 
-  const res = await fetch(`${BASE}/expenses/${id}`, {
-    method: 'PUT',
-    body: formData,
-  });
-  return handleResponse<Expense>(res);
+  await db.expenses.update(id, updates);
+  const row = await db.expenses.get(id);
+  if (!row) throw new Error('Expense not found');
+  return {
+    id: row.id!,
+    title: row.title,
+    amount: row.amount,
+    category: row.category,
+    date: row.date,
+    description: row.description,
+    taxDeductible: row.taxDeductible,
+    attachment: row.attachment,
+  };
 }
 
 export async function deleteExpense(id: number): Promise<void> {
-  const res = await fetch(`${BASE}/expenses/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  await ready;
+  await db.expenses.delete(id);
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${BASE}/categories`);
-  return handleResponse<Category[]>(res);
+  await ready;
+  const rows = await db.categories.toArray();
+  return rows.map(r => ({
+    id: r.id!,
+    name: r.name,
+    taxDeductible: r.taxDeductible,
+    color: r.color,
+  }));
 }
 
 export async function fetchInsights(): Promise<InsightsSummary> {
-  const res = await fetch(`${BASE}/insights`);
-  return handleResponse<InsightsSummary>(res);
+  await ready;
+  const allExpenses = await db.expenses.toArray();
+  const categories = await db.categories.toArray();
+
+  const categoryTaxMap = new Map<string, boolean>(
+    categories.map(c => [c.name, c.taxDeductible])
+  );
+
+  const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalDeductible = allExpenses
+    .filter(e => e.taxDeductible)
+    .reduce((sum, e) => sum + e.amount, 0);
+  const totalNonDeductible = totalExpenses - totalDeductible;
+
+  const categoryMap = new Map<string, { total: number; taxDeductible: boolean }>();
+  for (const e of allExpenses) {
+    const existing = categoryMap.get(e.category);
+    const isTaxDeductible = categoryTaxMap.get(e.category) ?? e.taxDeductible;
+    if (existing) {
+      existing.total += e.amount;
+    } else {
+      categoryMap.set(e.category, { total: e.amount, taxDeductible: isTaxDeductible });
+    }
+  }
+  const byCategory = Array.from(categoryMap.entries()).map(([category, data]) => ({
+    category,
+    total: data.total,
+    taxDeductible: data.taxDeductible,
+  }));
+
+  const monthMap = new Map<string, number>();
+  for (const e of allExpenses) {
+    const month = e.date.substring(0, 7);
+    monthMap.set(month, (monthMap.get(month) ?? 0) + e.amount);
+  }
+  const byMonth = Array.from(monthMap.entries())
+    .map(([month, total]) => ({ month, total }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  const deductiblePercentage = totalExpenses > 0 ? (totalDeductible / totalExpenses) * 100 : 0;
+
+  return {
+    totalExpenses,
+    totalDeductible,
+    totalNonDeductible,
+    byCategory,
+    byMonth,
+    deductiblePercentage,
+  };
 }
