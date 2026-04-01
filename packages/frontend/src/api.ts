@@ -13,6 +13,42 @@ function fileToDataURI(file: File): Promise<string> {
   });
 }
 
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_DIMENSION = 1920;
+const COMPRESS_QUALITY = 0.7;
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not supported')); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', COMPRESS_QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
+async function processAttachment(file: File): Promise<string> {
+  if (IMAGE_MIME_TYPES.includes(file.type)) {
+    return compressImage(file);
+  }
+  return fileToDataURI(file);
+}
+
 export async function fetchExpenses(filters?: {
   category?: string;
   startDate?: string;
@@ -47,7 +83,7 @@ export async function createExpense(data: Omit<Expense, 'id'>, attachment?: File
   await ready;
   let attachmentData: string | undefined;
   if (attachment) {
-    attachmentData = await fileToDataURI(attachment);
+    attachmentData = await processAttachment(attachment);
   }
   const id = await db.expenses.add({
     title: data.title,
@@ -72,7 +108,7 @@ export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'
   if (data.description !== undefined) updates.description = data.description;
   if (data.taxDeductible !== undefined) updates.taxDeductible = data.taxDeductible;
   if (attachment) {
-    updates.attachment = await fileToDataURI(attachment);
+    updates.attachment = await processAttachment(attachment);
     updates.attachmentName = attachment.name;
   }
 
