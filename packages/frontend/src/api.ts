@@ -235,7 +235,7 @@ export function downloadBackupFile(data: BackupData): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `expense-tracker-backup-${data.createdAt.slice(0, 10)}.json`;
+  a.download = `expense-tracker-backup-${data.createdAt.slice(0, 19).replace(/:/g, '-')}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
