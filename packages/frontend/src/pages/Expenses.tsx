@@ -105,6 +105,7 @@ export default function Expenses() {
             description: expense.description,
             taxDeductible: expense.taxDeductible,
             tags: expense.tags,
+            attachment: expense.attachment,
           });
           showToast('Expense restored');
           load();

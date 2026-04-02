@@ -87,7 +87,7 @@ export async function fetchExpenses(filters?: {
 
 export async function createExpense(data: Omit<Expense, 'id'>, attachment?: File): Promise<Expense> {
   await ready;
-  let attachmentData: string | undefined;
+  let attachmentData: string | undefined = data.attachment;
   if (attachment) {
     attachmentData = await processAttachment(attachment);
   }

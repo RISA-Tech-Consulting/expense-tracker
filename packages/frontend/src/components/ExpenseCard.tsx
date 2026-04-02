@@ -72,7 +72,7 @@ export default function ExpenseCard({ expense, onEdit, onDelete, variant = 'row'
         </div>
         {expense.attachment && isImageDataUri(expense.attachment) && (
           <div className="mb-2">
-            <img src={expense.attachment} alt="Receipt" style={{ maxWidth: '100%', maxHeight: 120, borderRadius: 4, objectFit: 'cover' }} onClick={() => openAttachment(expense.attachment!)} />
+            <img src={expense.attachment} alt="Receipt" style={{ maxWidth: '100%', maxHeight: 25, borderRadius: 4, objectFit: 'cover' }} onClick={() => openAttachment(expense.attachment!)} />
           </div>
         )}
         <div className="d-flex justify-content-between align-items-center">
