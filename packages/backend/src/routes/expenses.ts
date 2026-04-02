@@ -108,14 +108,13 @@ router.post('/', upload.single('attachment'), (req: Request, res: Response) => {
     const isTaxDeductible = typeof taxDeductible === 'boolean'
       ? taxDeductible
       : (taxDeductible === 'true' || taxDeductible === '1');
-    const missing = [
-      !title && 'title',
-      isNaN(parsedAmount) && 'amount',
-      !category && 'category',
-      !date && 'date',
-    ].filter(Boolean);
-    if (missing.length > 0) {
-      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+    const errors: string[] = [];
+    if (!title || typeof title !== 'string' || !title.trim()) errors.push('title is required');
+    if (isNaN(parsedAmount) || parsedAmount <= 0) errors.push('amount must be a positive number');
+    if (!category || typeof category !== 'string') errors.push('category is required');
+    if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.push('date must be in YYYY-MM-DD format');
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors.join(', ') });
     }
     const attachment = req.file ? req.file.filename : null;
     const result = db.prepare(

@@ -44,7 +44,12 @@ function compressImage(file: File): Promise<string> {
 
 async function processAttachment(file: File): Promise<string> {
   if (IMAGE_MIME_TYPES.includes(file.type)) {
-    return compressImage(file);
+    try {
+      return await compressImage(file);
+    } catch {
+      // Fall back to raw data URI if compression fails
+      return fileToDataURI(file);
+    }
   }
   return fileToDataURI(file);
 }
@@ -163,6 +168,11 @@ export async function updateCategory(id: number, data: Partial<Omit<Category, 'i
 
 export async function deleteCategory(id: number): Promise<void> {
   await ready;
+  const cat = await db.categories.get(id);
+  if (cat) {
+    // Reassign orphaned expenses to 'Others'
+    await db.expenses.where('category').equals(cat.name).modify({ category: 'Others' });
+  }
   await db.categories.delete(id);
 }
 
@@ -253,7 +263,32 @@ export async function exportBackup(): Promise<BackupData> {
   };
 }
 
+function validateBackupData(data: BackupData): string[] {
+  const errors: string[] = [];
+  if (data.version !== 1) errors.push('Unsupported backup version');
+  if (!Array.isArray(data.expenses)) errors.push('Missing expenses array');
+  if (!Array.isArray(data.categories)) errors.push('Missing categories array');
+  for (let i = 0; i < (data.expenses?.length ?? 0); i++) {
+    const e = data.expenses[i];
+    if (!e.title || typeof e.title !== 'string') errors.push(`Expense ${i}: invalid title`);
+    if (typeof e.amount !== 'number' || isNaN(e.amount) || e.amount < 0) errors.push(`Expense ${i}: invalid amount`);
+    if (!e.date || typeof e.date !== 'string') errors.push(`Expense ${i}: invalid date`);
+    if (!e.category || typeof e.category !== 'string') errors.push(`Expense ${i}: invalid category`);
+    if (errors.length >= 10) break; // Limit error messages
+  }
+  for (let i = 0; i < (data.categories?.length ?? 0); i++) {
+    const c = data.categories[i];
+    if (!c.name || typeof c.name !== 'string') errors.push(`Category ${i}: invalid name`);
+    if (errors.length >= 10) break;
+  }
+  return errors;
+}
+
 export async function importBackup(data: BackupData): Promise<void> {
+  const validationErrors = validateBackupData(data);
+  if (validationErrors.length > 0) {
+    throw new Error(`Invalid backup: ${validationErrors.join('; ')}`);
+  }
   await ready;
   await db.transaction('rw', db.expenses, db.categories, db.settings, async () => {
     await db.expenses.clear();
@@ -261,7 +296,7 @@ export async function importBackup(data: BackupData): Promise<void> {
     await db.settings.clear();
     if (data.categories.length) await db.categories.bulkAdd(data.categories);
     if (data.expenses.length) await db.expenses.bulkAdd(data.expenses);
-    if (data.settings.length) await db.settings.bulkPut(data.settings);
+    if (data.settings?.length) await db.settings.bulkPut(data.settings);
   });
 }
 

@@ -23,9 +23,23 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
     if (cat && !expense) setTaxDeductible(cat.taxDeductible);
   }, [category, categories, expense]);
 
+  const [errors, setErrors] = useState<string[]>([]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ title, amount: parseFloat(amount), category, date, description: description || undefined, taxDeductible }, attachment);
+    const validationErrors: string[] = [];
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) validationErrors.push('Title is required');
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) validationErrors.push('Amount must be greater than 0');
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) validationErrors.push('A valid date is required');
+    if (attachment && attachment.size > 5 * 1024 * 1024) validationErrors.push('Attachment must be under 5 MB');
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors([]);
+    onSave({ title: trimmedTitle, amount: parsedAmount, category, date, description: description || undefined, taxDeductible }, attachment);
   };
 
   return (
@@ -38,6 +52,11 @@ export default function ExpenseForm({ expense, categories, onSave, onClose }: Pr
           </div>
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
+              {errors.length > 0 && (
+                <div className="alert alert-danger py-2 mb-3">
+                  {errors.map((err, i) => <div key={i} className="small">{err}</div>)}
+                </div>
+              )}
               <div className="mb-3">
                 <label className="form-label">
                   Title <span className="text-danger">*</span>
