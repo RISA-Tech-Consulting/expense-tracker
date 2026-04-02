@@ -14,16 +14,19 @@ export default function TaxInsights() {
   const [insights, setInsights] = useState<InsightsSummary | null>(null);
   const [taxRate, setTaxRate] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [filterYear, setFilterYear] =  useState(new Date().getFullYear().toString());
 
   useEffect(() => {
-    Promise.all([fetchInsights(), getTaxRate()])
+    setLoading(true);
+    const year = filterYear || undefined;
+    Promise.all([fetchInsights(year), getTaxRate()])
       .then(([data, rate]) => {
         setInsights(data);
         setTaxRate(rate);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [filterYear]);
 
   if (loading)
     return (
@@ -55,8 +58,18 @@ export default function TaxInsights() {
 
   return (
     <div className="p-3 p-md-5">
-      <h2 className="mb-2">Tax Insights</h2>
-      <p className="text-muted mb-4 mb-md-5">Tax deductible breakdown and savings estimates</p>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2 gap-2">
+        <div>
+          <h2 className="mb-2">Tax Insights</h2>
+          <p className="text-muted mb-0">Tax deductible breakdown and savings estimates</p>
+        </div>
+        <select className="form-select form-select-sm" style={{ width: 'auto' }} value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+          <option value="">All Years</option>
+          {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - i).map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Summary Cards */}
       <div className="row g-3 mb-4 mb-md-5">

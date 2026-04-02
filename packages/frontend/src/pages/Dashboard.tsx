@@ -9,15 +9,18 @@ export default function Dashboard() {
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
-    Promise.all([fetchInsights(), fetchExpenses()]).then(([ins, exps]) => {
+    setLoading(true);
+    const year = filterYear || undefined;
+    Promise.all([fetchInsights(year), fetchExpenses({ startDate: year ? `${year}-01-01` : undefined, endDate: year ? `${year}-12-31` : undefined })]).then(([ins, exps]) => {
       setInsights(ins);
       setTotalCount(exps.length);
       setRecentExpenses(exps.slice(0, 5));
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [filterYear]);
 
   if (loading)
     return (
@@ -40,8 +43,18 @@ export default function Dashboard() {
 
   return (
     <div className="p-3 p-md-5">
-      <h2 className="mb-2">Dashboard</h2>
-      <p className="text-muted mb-4 mb-md-5">Overview of your expenses and tax insights</p>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2 gap-2">
+        <div>
+          <h2 className="mb-2">Dashboard</h2>
+          <p className="text-muted mb-0">Overview of your expenses and tax insights</p>
+        </div>
+        <select className="form-select form-select-sm" style={{ width: 'auto' }} value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+          <option value="">All Years</option>
+          {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - i).map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Stat Cards */}
       <div className="row g-3 mb-4 mb-md-5">

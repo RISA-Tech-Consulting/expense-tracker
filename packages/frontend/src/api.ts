@@ -201,9 +201,12 @@ export async function setTaxRate(rate: number): Promise<void> {
   await db.settings.put({ key: 'taxRate', value: String(rate) });
 }
 
-export async function fetchInsights(): Promise<InsightsSummary> {
+export async function fetchInsights(year?: string): Promise<InsightsSummary> {
   await ready;
-  const allExpenses = await db.expenses.toArray();
+  let allExpenses = await db.expenses.toArray();
+  if (year) {
+    allExpenses = allExpenses.filter(e => e.date.startsWith(year));
+  }
   const categories = await db.categories.toArray();
 
   const categoryTaxMap = new Map<string, boolean>(

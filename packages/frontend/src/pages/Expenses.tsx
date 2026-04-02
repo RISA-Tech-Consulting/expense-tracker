@@ -7,13 +7,13 @@ import ExpenseCard from '../components/ExpenseCard';
 import { showToast } from '../components/ToastContainer';
 import { exportExpensesCSV, exportExpensesPDF } from '../export';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 1;
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterYear, setFilterYear] = useState('');
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,7 +205,7 @@ export default function Expenses() {
               <button
                 onClick={() => {
                   setFilterCategory('');
-                  setFilterYear('');
+                  setFilterYear(new Date().getFullYear().toString());
                   setFilterStart('');
                   setFilterEnd('');
                   setSearchQuery('');
