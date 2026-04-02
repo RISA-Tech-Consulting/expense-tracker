@@ -7,7 +7,7 @@ import ExpenseCard from '../components/ExpenseCard';
 import { showToast } from '../components/ToastContainer';
 import { exportExpensesCSV, exportExpensesPDF } from '../export';
 
-const PAGE_SIZE = 1;
+const PAGE_SIZE = 10;
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -23,6 +23,7 @@ export default function Expenses() {
   const [editExpense, setEditExpense] = useState<Expense | undefined>();
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const load = useCallback(async () => {
     let startDate = filterStart || undefined;
@@ -150,6 +151,20 @@ export default function Expenses() {
 
       {/* Search + Filters */}
       <div className="card border-0 mb-4">
+        <div
+          className="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setFiltersOpen(prev => !prev)}
+        >
+          <span className="fw-semibold small">
+            <i className="bi bi-funnel me-1"></i>Filters
+            {(filterCategory || filterTag || filterStart || filterEnd || searchQuery || filterYear !== new Date().getFullYear().toString()) && (
+              <span className="badge bg-primary ms-2">Active</span>
+            )}
+          </span>
+          <i className={`bi bi-chevron-${filtersOpen ? 'up' : 'down'}`}></i>
+        </div>
+        {filtersOpen && (
         <div className="card-body p-3">
           <div className="row g-2">
             <div className="col-12 col-lg-4 mb-2 mb-lg-0">
@@ -218,6 +233,7 @@ export default function Expenses() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Result count */}
