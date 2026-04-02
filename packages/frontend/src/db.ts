@@ -10,6 +10,7 @@ export interface ExpenseRecord {
   taxDeductible: boolean;
   attachment?: string;
   attachmentName?: string;
+  tags?: string[];
 }
 
 export interface CategoryRecord {
@@ -24,10 +25,25 @@ export interface SettingRecord {
   value: string;
 }
 
+export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+
+export interface RecurringExpenseRecord {
+  id?: number;
+  title: string;
+  amount: number;
+  category: string;
+  description?: string;
+  taxDeductible: boolean;
+  frequency: RecurringFrequency;
+  nextDate: string;
+  enabled: boolean;
+}
+
 class ExpenseTrackerDB extends Dexie {
   expenses!: Table<ExpenseRecord, number>;
   categories!: Table<CategoryRecord, number>;
   settings!: Table<SettingRecord, string>;
+  recurringExpenses!: Table<RecurringExpenseRecord, number>;
 
   constructor() {
     super('ExpenseTrackerDB');
@@ -39,6 +55,18 @@ class ExpenseTrackerDB extends Dexie {
       expenses: '++id, category, date, taxDeductible',
       categories: '++id, &name',
       settings: '&key',
+    });
+    this.version(3).stores({
+      expenses: '++id, category, date, taxDeductible',
+      categories: '++id, &name',
+      settings: '&key',
+      recurringExpenses: '++id, nextDate, enabled',
+    });
+    this.version(4).stores({
+      expenses: '++id, category, date, taxDeductible, *tags',
+      categories: '++id, &name',
+      settings: '&key',
+      recurringExpenses: '++id, nextDate, enabled',
     });
   }
 }

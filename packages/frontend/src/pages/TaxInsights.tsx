@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { fetchInsights, getTaxRate } from '../api';
 import { InsightsSummary } from '../types';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+} from 'recharts';
 import './TaxInsights.css';
+
+const COLORS_DEDUCTIBLE = '#10b981';
+const COLORS_NON_DEDUCTIBLE = '#ef4444';
+const BAR_COLOR = '#3b82f6';
 
 export default function TaxInsights() {
   const [insights, setInsights] = useState<InsightsSummary | null>(null);
@@ -29,8 +36,22 @@ export default function TaxInsights() {
     );
 
   const estimatedSavings = (insights?.totalDeductible ?? 0) * (taxRate / 100);
-  const maxCat = Math.max(...(insights?.byCategory.map(c => c.total) ?? [1]), 1);
-  const maxMonth = Math.max(...(insights?.byMonth.map(m => m.total) ?? [1]), 1);
+
+  const pieData = [
+    { name: 'Deductible', value: insights?.totalDeductible ?? 0 },
+    { name: 'Non-Deductible', value: insights?.totalNonDeductible ?? 0 },
+  ].filter(d => d.value > 0);
+
+  const categoryData = (insights?.byCategory ?? []).map(c => ({
+    name: c.category,
+    total: c.total,
+    fill: c.taxDeductible ? COLORS_DEDUCTIBLE : COLORS_NON_DEDUCTIBLE,
+  }));
+
+  const monthlyData = (insights?.byMonth ?? []).map(m => ({
+    month: m.month,
+    total: m.total,
+  }));
 
   return (
     <div className="p-3 p-md-5">
@@ -57,7 +78,7 @@ export default function TaxInsights() {
         ))}
       </div>
 
-      {/* Deductible vs Non-Deductible & Tax Summary */}
+      {/* Deductible vs Non-Deductible Pie & Tax Summary */}
       <div className="row g-4 mb-4">
         <div className="col-12 col-lg-6">
           <div className="card border-0">
@@ -68,32 +89,20 @@ export default function TaxInsights() {
               <p className="text-muted small mb-3">
                 {(insights?.deductiblePercentage ?? 0).toFixed(1)}% of expenses are tax deductible
               </p>
-              <div className="tax-deductibility-track mb-3" role="img" aria-label="Deductible vs non-deductible split">
-                <svg className="tax-deductibility-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
-                  <rect
-                    x="0"
-                    y="0"
-                    width={Math.max(0, Math.min(100, insights?.deductiblePercentage ?? 0))}
-                    height="24"
-                    className="tax-deductibility-fill-deductible"
-                  />
-                  <rect
-                    x={Math.max(0, Math.min(100, insights?.deductiblePercentage ?? 0))}
-                    y="0"
-                    width={Math.max(0, Math.min(100, 100 - (insights?.deductiblePercentage ?? 0)))}
-                    height="24"
-                    className="tax-deductibility-fill-non-deductible"
-                  />
-                </svg>
-              </div>
-              <div className="small">
-                <div className="mb-2">
-                  <span className="tax-legend-deductible">● Deductible: ${(insights?.totalDeductible ?? 0).toFixed(2)}</span>
-                </div>
-                <div>
-                  <span className="tax-legend-non-deductible">● Non-deductible: ${(insights?.totalNonDeductible ?? 0).toFixed(2)}</span>
-                </div>
-              </div>
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}>
+                      <Cell fill={COLORS_DEDUCTIBLE} />
+                      <Cell fill={COLORS_NON_DEDUCTIBLE} />
+                    </Pie>
+                    <Tooltip formatter={(val) => `$${Number(val).toFixed(2)}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted">No data yet.</p>
+              )}
             </div>
           </div>
         </div>
@@ -125,7 +134,7 @@ export default function TaxInsights() {
         </div>
       </div>
 
-      {/* By Category & Monthly Trend */}
+      {/* By Category & Monthly Trend - Bar Charts */}
       <div className="row g-4">
         <div className="col-12 col-lg-6">
           <div className="card border-0">
@@ -133,35 +142,21 @@ export default function TaxInsights() {
               <h5 className="mb-0">By Category</h5>
             </div>
             <div className="card-body">
-              {(insights?.byCategory ?? []).length === 0 ? (
+              {categoryData.length === 0 ? (
                 <p className="text-muted mb-0">No data yet.</p>
               ) : (
-                insights?.byCategory.map(cat => (
-                  <div key={cat.category} className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1 small">
-                      <span className="fw-500">
-                        {cat.category}
-                        <span
-                          className={`badge ms-2 ${cat.taxDeductible ? 'bg-success' : 'bg-danger'}`}
-                        >
-                          {cat.taxDeductible ? 'Deductible' : 'Non-deductible'}
-                        </span>
-                      </span>
-                      <span className="fw-bold">${cat.total.toFixed(2)}</span>
-                    </div>
-                    <div className="tax-category-track" role="img" aria-label={`${cat.category} total`}>
-                      <svg className="tax-category-svg" viewBox="0 0 100 8" preserveAspectRatio="none">
-                        <rect
-                          x="0"
-                          y="0"
-                          width={Math.max(0, Math.min(100, (cat.total / maxCat) * 100))}
-                          height="8"
-                          className={cat.taxDeductible ? 'tax-category-fill-deductible' : 'tax-category-fill-non-deductible'}
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                ))
+                <ResponsiveContainer width="100%" height={Math.max(200, categoryData.length * 40)}>
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                    <XAxis type="number" tickFormatter={(v: number) => `$${v}`} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(val) => `$${Number(val).toFixed(2)}`} />
+                    <Bar dataKey="total" radius={[0, 4, 4, 0]}>
+                      {categoryData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </div>
           </div>
@@ -173,28 +168,17 @@ export default function TaxInsights() {
               <h5 className="mb-0">Monthly Trend</h5>
             </div>
             <div className="card-body">
-              {(insights?.byMonth ?? []).length === 0 ? (
+              {monthlyData.length === 0 ? (
                 <p className="text-muted mb-0">No data yet.</p>
               ) : (
-                <div className="d-flex align-items-end gap-2 tax-months-chart">
-                  {insights?.byMonth.map(m => (
-                    <div key={m.month} className="flex-grow-1 d-flex flex-column align-items-center gap-1">
-                      <small className="text-muted">${m.total.toFixed(0)}</small>
-                      <svg className="tax-month-bar" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`${m.month} monthly total`}>
-                        <rect
-                          x="0"
-                          y={100 - Math.max(4, Math.min(100, (m.total / maxMonth) * 100))}
-                          width="100"
-                          height={Math.max(4, Math.min(100, (m.total / maxMonth) * 100))}
-                          className="tax-month-bar-fill"
-                        />
-                      </svg>
-                      <small className="text-muted tax-month-label">
-                        {m.month}
-                      </small>
-                    </div>
-                  ))}
-                </div>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={monthlyData} margin={{ left: 10, right: 10, bottom: 20 }}>
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" />
+                    <YAxis tickFormatter={(v: number) => `$${v}`} />
+                    <Tooltip formatter={(val) => `$${Number(val).toFixed(2)}`} />
+                    <Bar dataKey="total" fill={BAR_COLOR} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </div>
           </div>

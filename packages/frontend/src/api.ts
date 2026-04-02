@@ -1,5 +1,5 @@
 import { Expense, Category, InsightsSummary } from './types';
-import db, { seedDefaultCategories } from './db';
+import db, { seedDefaultCategories, type ExpenseRecord, type RecurringFrequency, type RecurringExpenseRecord } from './db';
 
 // Ensure default categories exist on first use
 const ready = seedDefaultCategories();
@@ -81,6 +81,7 @@ export async function fetchExpenses(filters?: {
     description: r.description,
     taxDeductible: r.taxDeductible,
     attachment: r.attachment,
+    tags: r.tags,
   }));
 }
 
@@ -99,19 +100,21 @@ export async function createExpense(data: Omit<Expense, 'id'>, attachment?: File
     taxDeductible: data.taxDeductible,
     attachment: attachmentData,
     attachmentName: attachment?.name,
+    tags: data.tags ?? [],
   });
   return { ...data, id: id as number, attachment: attachmentData };
 }
 
 export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'>>, attachment?: File): Promise<Expense> {
   await ready;
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<ExpenseRecord> = {};
   if (data.title !== undefined) updates.title = data.title;
   if (data.amount !== undefined) updates.amount = data.amount;
   if (data.category !== undefined) updates.category = data.category;
   if (data.date !== undefined) updates.date = data.date;
   if (data.description !== undefined) updates.description = data.description;
   if (data.taxDeductible !== undefined) updates.taxDeductible = data.taxDeductible;
+  if (data.tags !== undefined) updates.tags = data.tags;
   if (attachment) {
     updates.attachment = await processAttachment(attachment);
     updates.attachmentName = attachment.name;
@@ -129,12 +132,23 @@ export async function updateExpense(id: number, data: Partial<Omit<Expense, 'id'
     description: row.description,
     taxDeductible: row.taxDeductible,
     attachment: row.attachment,
+    tags: row.tags,
   };
 }
 
 export async function deleteExpense(id: number): Promise<void> {
   await ready;
   await db.expenses.delete(id);
+}
+
+export async function fetchAllTags(): Promise<string[]> {
+  await ready;
+  const all = await db.expenses.toArray();
+  const tagSet = new Set<string>();
+  for (const e of all) {
+    if (e.tags) e.tags.forEach(t => tagSet.add(t));
+  }
+  return Array.from(tagSet).sort();
 }
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -237,6 +251,79 @@ export async function fetchInsights(): Promise<InsightsSummary> {
     byMonth,
     deductiblePercentage,
   };
+}
+
+// ── Recurring Expenses ──
+
+export interface RecurringExpense {
+  id: number;
+  title: string;
+  amount: number;
+  category: string;
+  description?: string;
+  taxDeductible: boolean;
+  frequency: RecurringFrequency;
+  nextDate: string;
+  enabled: boolean;
+}
+
+export async function fetchRecurringExpenses(): Promise<RecurringExpense[]> {
+  await ready;
+  const rows = await db.recurringExpenses.toArray();
+  return rows.map(r => ({ ...r, id: r.id! }));
+}
+
+export async function createRecurringExpense(data: Omit<RecurringExpense, 'id'>): Promise<RecurringExpense> {
+  await ready;
+  const id = await db.recurringExpenses.add(data as RecurringExpenseRecord);
+  return { ...data, id: id as number };
+}
+
+export async function updateRecurringExpense(id: number, data: Partial<Omit<RecurringExpense, 'id'>>): Promise<void> {
+  await ready;
+  await db.recurringExpenses.update(id, data);
+}
+
+export async function deleteRecurringExpense(id: number): Promise<void> {
+  await ready;
+  await db.recurringExpenses.delete(id);
+}
+
+function advanceDate(dateStr: string, frequency: RecurringFrequency): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  switch (frequency) {
+    case 'weekly': d.setDate(d.getDate() + 7); break;
+    case 'biweekly': d.setDate(d.getDate() + 14); break;
+    case 'monthly': d.setMonth(d.getMonth() + 1); break;
+    case 'yearly': d.setFullYear(d.getFullYear() + 1); break;
+  }
+  return d.toISOString().split('T')[0];
+}
+
+export async function processRecurringExpenses(): Promise<number> {
+  await ready;
+  const today = new Date().toISOString().split('T')[0];
+  const due = await db.recurringExpenses.where('enabled').equals(1).toArray();
+  let created = 0;
+  for (const rec of due) {
+    if (!rec.enabled || rec.nextDate > today) continue;
+    // Create expense for each due date up to today
+    let next = rec.nextDate;
+    while (next <= today) {
+      await db.expenses.add({
+        title: rec.title,
+        amount: rec.amount,
+        category: rec.category,
+        date: next,
+        description: rec.description,
+        taxDeductible: rec.taxDeductible,
+      });
+      next = advanceDate(next, rec.frequency);
+      created++;
+    }
+    await db.recurringExpenses.update(rec.id!, { nextDate: next });
+  }
+  return created;
 }
 
 // ── Backup & Restore ──

@@ -7,6 +7,7 @@ export interface Expense {
   description?: string;
   taxDeductible: boolean;
   attachment?: string;
+  tags?: string[];
 }
 
 export interface Category {

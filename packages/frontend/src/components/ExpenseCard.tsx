@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Expense } from '../types';
 
 function openAttachment(dataUri: string) {
@@ -8,6 +9,47 @@ function openAttachment(dataUri: string) {
   for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
   const blob = new Blob([arr], { type: mime });
   window.open(URL.createObjectURL(blob), '_blank');
+}
+
+function isImageDataUri(uri: string): boolean {
+  return /^data:image\//i.test(uri);
+}
+
+function AttachmentPreview({ dataUri }: { dataUri: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (isImageDataUri(dataUri)) {
+    return (
+      <div className="d-inline-block">
+        <img
+          src={dataUri}
+          alt="Receipt"
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            width: expanded ? 200 : 32,
+            height: expanded ? 'auto' : 32,
+            objectFit: 'cover',
+            borderRadius: 4,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        />
+        {expanded && (
+          <div className="mt-1">
+            <button className="btn btn-link btn-sm p-0" style={{ fontSize: '0.7rem' }} onClick={() => openAttachment(dataUri)}>
+              Open full size
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <a href="#" onClick={(e) => { e.preventDefault(); openAttachment(dataUri); }} className="small">
+      <i className="bi bi-file-earmark-pdf"></i> PDF
+    </a>
+  );
 }
 
 interface Props {
@@ -28,17 +70,25 @@ export default function ExpenseCard({ expense, onEdit, onDelete, variant = 'row'
           </div>
           <div className="fw-bold small text-nowrap">${expense.amount.toFixed(2)}</div>
         </div>
+        {expense.attachment && isImageDataUri(expense.attachment) && (
+          <div className="mb-2">
+            <img src={expense.attachment} alt="Receipt" style={{ maxWidth: '100%', maxHeight: 120, borderRadius: 4, objectFit: 'cover' }} onClick={() => openAttachment(expense.attachment!)} />
+          </div>
+        )}
         <div className="d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             <span
               className={`badge ${expense.taxDeductible ? 'bg-success' : 'bg-danger'}`}
               style={{ fontSize: '0.7rem' }}
             >
               {expense.taxDeductible ? 'Deductible' : 'Non-deductible'}
             </span>
-            {expense.attachment && (
+            {expense.tags?.map(tag => (
+              <span key={tag} className="badge bg-info text-dark" style={{ fontSize: '0.65rem' }}>{tag}</span>
+            ))}
+            {expense.attachment && !isImageDataUri(expense.attachment) && (
               <a href="#" onClick={(e) => { e.preventDefault(); openAttachment(expense.attachment!); }} style={{ fontSize: '0.75rem' }}>
-                <i className="bi bi-paperclip"></i>
+                <i className="bi bi-file-earmark-pdf"></i>
               </a>
             )}
           </div>
@@ -58,6 +108,14 @@ export default function ExpenseCard({ expense, onEdit, onDelete, variant = 'row'
       <td className="fw-bold small">${expense.amount.toFixed(2)}</td>
       <td className="text-muted small">{expense.date}</td>
       <td>
+        <div className="d-flex flex-wrap gap-1">
+          {expense.tags?.map(tag => (
+            <span key={tag} className="badge bg-info text-dark" style={{ fontSize: '0.65rem' }}>{tag}</span>
+          ))}
+          {(!expense.tags || expense.tags.length === 0) && <span className="text-muted small">—</span>}
+        </div>
+      </td>
+      <td>
         <span
           className={`badge ${
             expense.taxDeductible ? 'bg-success' : 'bg-danger'
@@ -68,9 +126,7 @@ export default function ExpenseCard({ expense, onEdit, onDelete, variant = 'row'
       </td>
       <td>
         {expense.attachment ? (
-          <a href="#" onClick={(e) => { e.preventDefault(); openAttachment(expense.attachment!); }} className="small">
-            <i className="bi bi-paperclip"></i>
-          </a>
+          <AttachmentPreview dataUri={expense.attachment} />
         ) : (
           <span className="text-muted small">—</span>
         )}
