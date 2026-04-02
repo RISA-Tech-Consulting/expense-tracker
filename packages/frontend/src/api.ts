@@ -190,6 +190,31 @@ export async function deleteCategory(id: number): Promise<void> {
   await db.categories.delete(id);
 }
 
+export async function getExpensesByCategory(categoryName: string): Promise<Expense[]> {
+  await ready;
+  const rows = await db.expenses.where('category').equals(categoryName).toArray();
+  return rows.map(r => ({
+    id: r.id!,
+    title: r.title,
+    amount: r.amount,
+    category: r.category,
+    date: r.date,
+    description: r.description,
+    taxDeductible: r.taxDeductible,
+    attachment: r.attachment,
+    tags: r.tags,
+  }));
+}
+
+export async function bulkReassignCategory(fromCategory: string, toCategory: string): Promise<number> {
+  await ready;
+  const toCat = await db.categories.where('name').equals(toCategory).first();
+  if (!toCat) throw new Error(`Target category "${toCategory}" not found`);
+  const count = await db.expenses.where('category').equals(fromCategory).count();
+  await db.expenses.where('category').equals(fromCategory).modify({ category: toCategory });
+  return count;
+}
+
 export async function getTaxRate(): Promise<number> {
   await ready;
   const row = await db.settings.get('taxRate');

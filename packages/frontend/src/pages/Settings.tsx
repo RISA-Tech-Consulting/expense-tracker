@@ -4,10 +4,12 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  getExpensesByCategory,
+  bulkReassignCategory,
   getTaxRate,
   setTaxRate,
 } from '../api';
-import { Category } from '../types';
+import { Category, Expense } from '../types';
 
 export default function Settings() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -20,6 +22,12 @@ export default function Settings() {
   const [color, setColor] = useState('#6B7280');
   const [taxDeductible, setTaxDeductible] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [affectedExpenses, setAffectedExpenses] = useState<Expense[]>([]);
+  const [reassignTo, setReassignTo] = useState('');
+  const [reassigning, setReassigning] = useState(false);
 
   const load = useCallback(async () => {
     const [cats, rate] = await Promise.all([fetchCategories(), getTaxRate()]);
@@ -64,10 +72,41 @@ export default function Settings() {
   };
 
   const handleDelete = async (id: number) => {
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
+    const exps = await getExpensesByCategory(cat.name);
+    if (exps.length > 0) {
+      setDeleteTarget(cat);
+      setAffectedExpenses(exps);
+      const otherCats = categories.filter(c => c.id !== id);
+      setReassignTo(otherCats[0]?.name ?? '');
+      return;
+    }
     if (!confirm('Delete this category?')) return;
     await deleteCategory(id);
     if (editId === id) resetForm();
     await load();
+  };
+
+  const handleBulkReassignAndDelete = async () => {
+    if (!deleteTarget || !reassignTo) return;
+    setReassigning(true);
+    try {
+      await bulkReassignCategory(deleteTarget.name, reassignTo);
+      await deleteCategory(deleteTarget.id);
+      if (editId === deleteTarget.id) resetForm();
+      setDeleteTarget(null);
+      setAffectedExpenses([]);
+      await load();
+    } finally {
+      setReassigning(false);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    setAffectedExpenses([]);
+    setReassignTo('');
   };
 
   const handleTaxRateChange = async (value: string) => {
@@ -104,17 +143,17 @@ export default function Settings() {
               <p className="text-muted small mb-3">
                 Set the assumed tax rate used to estimate tax savings on the Tax Insights page.
               </p>
-              <div className="input-group">
+              <div className="d-flex align-items-center gap-3">
                 <input
-                  type="number"
-                  className="form-control"
+                  type="range"
+                  className="form-range flex-grow-1"
                   min="0"
                   max="100"
                   step="1"
                   value={taxRate}
                   onChange={e => handleTaxRateChange(e.target.value)}
                 />
-                <span className="input-group-text">%</span>
+                <span className="fw-bold" style={{ minWidth: 48, textAlign: 'right' }}>{taxRate}%</span>
               </div>
             </div>
           </div>
@@ -212,12 +251,12 @@ export default function Settings() {
                             </span>
                           </td>
                           <td>
-                            <div className="btn-group btn-group-sm">
-                              <button className="btn btn-outline-primary btn-sm" onClick={() => handleEdit(cat)}>
-                                Edit
+                            <div className="d-flex gap-2">
+                              <button className="btn btn-outline-primary btn-sm px-2 py-1" onClick={() => handleEdit(cat)}>
+                                <i className="bi bi-pencil-square"></i>
                               </button>
-                              <button className="btn btn-outline-danger btn-sm" onClick={() => handleDelete(cat.id)}>
-                                Delete
+                              <button className="btn btn-outline-danger btn-sm px-2 py-1" onClick={() => handleDelete(cat.id)}>
+                                <i className="bi bi-trash"></i>
                               </button>
                             </div>
                           </td>
@@ -231,6 +270,67 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Delete Category Confirmation Modal */}
+      {deleteTarget && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header border-bottom">
+                <h5 className="modal-title">Cannot Delete "{deleteTarget.name}"</h5>
+                <button type="button" className="btn-close" onClick={closeDeleteModal}></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning py-2 mb-3">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  This category is used by <strong>{affectedExpenses.length}</strong> expense{affectedExpenses.length !== 1 ? 's' : ''}. Reassign them to another category before deleting.
+                </div>
+
+                <div className="table-responsive mb-3" style={{ maxHeight: 200, overflowY: 'auto' }}>
+                  <table className="table table-sm table-hover mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="small">Title</th>
+                        <th className="small">Amount</th>
+                        <th className="small">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {affectedExpenses.map(e => (
+                        <tr key={e.id}>
+                          <td className="small">{e.title}</td>
+                          <td className="small fw-bold">${e.amount.toFixed(2)}</td>
+                          <td className="small text-muted">{e.date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="d-flex align-items-center gap-2">
+                  <label className="form-label mb-0 small fw-semibold text-nowrap">Reassign to:</label>
+                  <select className="form-select form-select-sm" value={reassignTo} onChange={e => setReassignTo(e.target.value)}>
+                    {categories.filter(c => c.id !== deleteTarget.id).map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer border-top">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={closeDeleteModal}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  disabled={reassigning || !reassignTo}
+                  onClick={handleBulkReassignAndDelete}
+                >
+                  {reassigning ? 'Reassigning...' : `Reassign ${affectedExpenses.length} & Delete`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
