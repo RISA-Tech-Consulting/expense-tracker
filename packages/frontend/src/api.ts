@@ -464,3 +464,25 @@ export function isBackupDue(schedule: BackupSchedule, lastBackup: string | null)
     default: return false;
   }
 }
+
+export async function getDrivePushSchedule(): Promise<BackupSchedule> {
+  await ready;
+  const row = await db.settings.get('drivePushSchedule');
+  return (row?.value as BackupSchedule) || 'off';
+}
+
+export async function setDrivePushSchedule(schedule: BackupSchedule): Promise<void> {
+  await ready;
+  await db.settings.put({ key: 'drivePushSchedule', value: schedule });
+}
+
+export async function getLastDrivePushTime(): Promise<string | null> {
+  await ready;
+  const row = await db.settings.get('lastDrivePushTime');
+  return row?.value ?? null;
+}
+
+export async function setLastDrivePushTime(time: string): Promise<void> {
+  await ready;
+  await db.settings.put({ key: 'lastDrivePushTime', value: time });
+}
