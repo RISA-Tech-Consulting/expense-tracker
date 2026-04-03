@@ -142,4 +142,3 @@ vite.config.ts.timestamp-*
 *.db
 *.db-shm
 *.db-wal
-packages/backend/data/
