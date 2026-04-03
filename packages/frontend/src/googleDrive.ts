@@ -92,6 +92,7 @@ export async function signIn(): Promise<string> {
         return;
       }
       accessToken = response.access_token;
+      db.settings.put({ key: 'driveConnected', value: 'true' });
       resolve(accessToken);
     };
     tokenClient.error_callback = (err: google.accounts.oauth2.ClientConfigError) => {
@@ -111,10 +112,32 @@ export function signOut(): void {
     google.accounts.oauth2.revoke(accessToken, () => {});
     accessToken = null;
   }
+  db.settings.delete('driveConnected');
 }
 
 export function isSignedIn(): boolean {
   return !!accessToken;
+}
+
+/** Silently restore the Drive session if the user previously connected. */
+export async function restoreSession(): Promise<boolean> {
+  const row = await db.settings.get('driveConnected');
+  if (row?.value !== 'true' || !CLIENT_ID) return false;
+  try {
+    await ensureInit();
+    return await new Promise<boolean>((resolve) => {
+      if (!tokenClient) { resolve(false); return; }
+      tokenClient.callback = (response: google.accounts.oauth2.TokenResponse) => {
+        if (response.error) { resolve(false); return; }
+        accessToken = response.access_token;
+        resolve(true);
+      };
+      tokenClient.error_callback = () => { resolve(false); };
+      tokenClient.requestAccessToken({ prompt: '' });
+    });
+  } catch {
+    return false;
+  }
 }
 
 // ── Drive API helpers ──

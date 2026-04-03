@@ -24,6 +24,7 @@ import {
   pullFromDrive,
   getRemoteBackupInfo,
   getLastDriveSyncTime,
+  restoreSession as restoreDriveSession,
 } from '../googleDrive';
 
 export default function Backup() {
@@ -53,7 +54,12 @@ export default function Backup() {
     const [dps, ldp] = await Promise.all([getDrivePushSchedule(), getLastDrivePushTime()]);
     setDrivePushScheduleState(dps);
     setLastDrivePush(ldp);
-    setDriveConnected(isDriveSignedIn());
+    if (isDriveSignedIn()) {
+      setDriveConnected(true);
+    } else if (isDriveConfigured()) {
+      const restored = await restoreDriveSession();
+      setDriveConnected(restored);
+    }
     setLoading(false);
   }, []);
 
