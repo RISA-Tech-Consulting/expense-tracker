@@ -6,9 +6,10 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import App from './App';
 import { processRecurringExpenses } from './api';
 import { handleRedirectResult } from './googleDrive';
+import { features } from './features';
 
 // Capture OAuth redirect token before React renders (PWA redirect flow)
-handleRedirectResult();
+if (features.googleDriveBackup) handleRedirectResult();
 
 // Process any due recurring expenses on startup
 processRecurringExpenses().catch(() => {});

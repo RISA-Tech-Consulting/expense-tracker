@@ -1,5 +1,6 @@
 import { exportBackup, importBackup, type BackupData } from './api';
 import db from './db';
+import { features } from './features';
 
 // ── Configuration ──
 // Replace with your own Google Cloud Console OAuth 2.0 Client ID.
@@ -60,7 +61,7 @@ async function loadGis(): Promise<void> {
 let initPromise: Promise<void> | null = null;
 
 export function isConfigured(): boolean {
-  return !!CLIENT_ID;
+  return features.googleDriveBackup && !!CLIENT_ID;
 }
 
 async function ensureInit(): Promise<void> {
