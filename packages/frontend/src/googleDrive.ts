@@ -16,6 +16,12 @@ const BACKUP_MIME = 'application/json';
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 let accessToken: string | null = null;
 
+/** Detect if running as an installed PWA (standalone mode). */
+function isStandalonePWA(): boolean {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as unknown as { standalone?: boolean }).standalone === true;
+}
+
 // ── Helpers: script loading ──
 
 function loadScript(src: string, id: string): Promise<void> {
@@ -79,8 +85,44 @@ async function ensureInit(): Promise<void> {
 
 // ── Auth ──
 
+/**
+ * Parse an OAuth2 implicit-grant token from the URL hash (after redirect flow).
+ * Returns the access_token if present, or null.
+ */
+export function handleRedirectResult(): string | null {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token')) return null;
+  const params = new URLSearchParams(hash.substring(1));
+  const token = params.get('access_token');
+  if (token) {
+    accessToken = token;
+    db.settings.put({ key: 'driveConnected', value: 'true' });
+    // Clean up the hash so it doesn't linger
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  return token;
+}
+
 export async function signIn(): Promise<string> {
   await ensureInit();
+
+  // In standalone PWA mode, popups are blocked — use redirect flow
+  if (isStandalonePWA()) {
+    if (!CLIENT_ID) throw new Error('Google Drive not configured');
+    const redirectUri = window.location.origin + window.location.pathname;
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth` +
+      `?client_id=${encodeURIComponent(CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=token` +
+      `&scope=${encodeURIComponent(SCOPES)}` +
+      `&prompt=consent`;
+    window.location.href = authUrl;
+    // Page will redirect — return a never-resolving promise
+    return new Promise(() => {});
+  }
+
+  // Popup flow for regular browser
   return new Promise((resolve, reject) => {
     if (!tokenClient) {
       reject(new Error('Token client not initialised'));
@@ -99,7 +141,6 @@ export async function signIn(): Promise<string> {
       reject(new Error(err.message ?? 'Sign-in failed'));
     };
     if (accessToken) {
-      // Already have a token – silently request a new one
       tokenClient.requestAccessToken({ prompt: '' });
     } else {
       tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -121,8 +162,37 @@ export function isSignedIn(): boolean {
 
 /** Silently restore the Drive session if the user previously connected. */
 export async function restoreSession(): Promise<boolean> {
+  // First check if we're returning from a redirect auth flow
+  const redirectToken = handleRedirectResult();
+  if (redirectToken) return true;
+
   const row = await db.settings.get('driveConnected');
   if (row?.value !== 'true' || !CLIENT_ID) return false;
+
+  // In standalone PWA, we can't silently get a token without user gesture,
+  // so try the redirect flow only when the user explicitly taps connect.
+  // But we still mark as "connected" so the UI shows the right state.
+  if (isStandalonePWA()) {
+    // Try using a hidden iframe approach — if it fails, we'll prompt re-auth on next action
+    try {
+      await ensureInit();
+      await loadGapiClient();
+      // Attempt a silent token fetch via the GIS library
+      return await new Promise<boolean>((resolve) => {
+        if (!tokenClient) { resolve(false); return; }
+        tokenClient.callback = (response: google.accounts.oauth2.TokenResponse) => {
+          if (response.error) { resolve(false); return; }
+          accessToken = response.access_token;
+          resolve(true);
+        };
+        tokenClient.error_callback = () => { resolve(false); };
+        tokenClient.requestAccessToken({ prompt: '' });
+      });
+    } catch {
+      return false;
+    }
+  }
+
   try {
     await ensureInit();
     return await new Promise<boolean>((resolve) => {

@@ -37,6 +37,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
@@ -45,6 +46,10 @@ export default defineConfig({
               cacheName: 'cdn-cache',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
+          },
+          {
+            urlPattern: /^https:\/\/(apis\.google\.com|accounts\.google\.com|www\.googleapis\.com|oauth2\.googleapis\.com)\/.*/i,
+            handler: 'NetworkOnly',
           },
         ],
       },

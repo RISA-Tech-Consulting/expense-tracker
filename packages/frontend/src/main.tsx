@@ -5,6 +5,10 @@ import 'bootstrap-icons/font/bootstrap-icons.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import App from './App';
 import { processRecurringExpenses } from './api';
+import { handleRedirectResult } from './googleDrive';
+
+// Capture OAuth redirect token before React renders (PWA redirect flow)
+handleRedirectResult();
 
 // Process any due recurring expenses on startup
 processRecurringExpenses().catch(() => {});
