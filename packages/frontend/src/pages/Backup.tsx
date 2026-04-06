@@ -238,6 +238,7 @@ export default function Backup() {
       <div className="row g-4">
         {/* Backup Now */}
          {/* Google Drive Sync */}
+        {driveAvailable && (
         <div className="col-12">
           <div className="card border-0">
             <div className="card-header bg-transparent border-bottom d-flex align-items-center">
@@ -358,6 +359,7 @@ export default function Backup() {
             </div>
           </div>
         </div>
+        )}
         
         <div className="col-12 col-lg-6">
           <div className="card border-0 h-100">
